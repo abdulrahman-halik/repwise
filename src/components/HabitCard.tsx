@@ -26,7 +26,7 @@ export function HabitCard({
   const categoryInfo = CATEGORIES.find((c) => c.id === habit.category) || CATEGORIES[0];
 
   return (
-    <div className="group relative bg-gray-900/70 hover:bg-gray-900/90 border border-gray-800/80 hover:border-gray-750 rounded-2xl p-4 sm:p-5 transition-all duration-200">
+    <div className="group relative bg-white hover:bg-white/95 border border-gray-200/90 hover:border-gray-300 shadow-xs hover:shadow-sm dark:bg-gray-900/70 dark:hover:bg-gray-900/90 dark:border-gray-800/80 dark:hover:border-gray-700 rounded-2xl p-4 sm:p-5 transition-all duration-200">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Left Side: Meta & Habit Info */}
         <div className="flex-1 min-w-0">
@@ -38,30 +38,30 @@ export function HabitCard({
             </span>
 
             {stats.currentStreak > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                <Flame className="w-3 h-3 fill-amber-400" />
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20">
+                <Flame className="w-3 h-3 fill-amber-500 dark:fill-amber-400 text-amber-500 dark:text-amber-400" />
                 {stats.currentStreak} {stats.currentStreak === 1 ? 'day' : 'days'}
               </span>
             )}
 
             {stats.bestStreak > 1 && (
-              <span className="text-[11px] text-gray-500 font-medium">
+              <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">
                 Best: {stats.bestStreak}d
               </span>
             )}
           </div>
 
-          <h3 className="text-base font-semibold text-gray-100 truncate group-hover:text-white">
+          <h3 className="text-base font-semibold text-gray-900 group-hover:text-black dark:text-gray-100 dark:group-hover:text-white truncate">
             {habit.title}
           </h3>
 
           {habit.description && (
-            <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{habit.description}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{habit.description}</p>
           )}
         </div>
 
         {/* Right Side: 7-Day Matrix + Actions */}
-        <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-gray-800/60">
+        <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-gray-200 dark:border-gray-800/60 transition-colors duration-150">
           {/* 7-Day Completion Grid */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             {recentDays.map((day) => {
@@ -76,15 +76,15 @@ export function HabitCard({
                     isCompleted
                       ? 'bg-emerald-500 text-gray-950 font-bold shadow-sm shadow-emerald-500/30'
                       : day.isToday
-                      ? 'bg-gray-800/90 border-2 border-emerald-500/40 text-gray-300 hover:border-emerald-400 hover:bg-emerald-500/10'
-                      : 'bg-gray-950/60 border border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-200'
+                      ? 'bg-emerald-50/60 border-2 border-emerald-500/50 text-emerald-950 hover:border-emerald-500 hover:bg-emerald-100/50 dark:bg-gray-800/90 dark:border-emerald-500/40 dark:text-gray-300 dark:hover:border-emerald-400 dark:hover:bg-emerald-500/10'
+                      : 'bg-gray-50 border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-900 hover:bg-gray-100/80 dark:bg-gray-950/60 dark:border-gray-800 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:text-gray-200'
                   }`}
                   title={`${day.dateKey} (${day.dayName}): ${isCompleted ? 'Completed' : 'Not completed'}`}
                   aria-label={`Toggle ${habit.title} on ${day.dayName}`}
                 >
                   <span
                     className={`text-[10px] font-medium uppercase leading-tight ${
-                      isCompleted ? 'text-gray-900/80 font-bold' : 'text-gray-500'
+                      isCompleted ? 'text-gray-950 font-bold' : 'text-gray-400 dark:text-gray-500'
                     }`}
                   >
                     {day.dayName.charAt(0)}
@@ -101,7 +101,7 @@ export function HabitCard({
                   {day.isToday && (
                     <span
                       className={`w-1 h-1 rounded-full ${
-                        isCompleted ? 'bg-gray-950' : 'bg-emerald-400'
+                        isCompleted ? 'bg-gray-950' : 'bg-emerald-600 dark:bg-emerald-400'
                       }`}
                     />
                   )}
@@ -115,7 +115,7 @@ export function HabitCard({
             <button
               type="button"
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors focus:outline-none"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-800 transition-colors focus:outline-none"
               aria-label="Habit options"
             >
               <MoreVertical className="w-4 h-4" />
@@ -127,14 +127,14 @@ export function HabitCard({
                   className="fixed inset-0 z-30"
                   onClick={() => setMenuOpen(false)}
                 />
-                <div className="absolute right-0 top-full mt-1.5 w-36 rounded-xl bg-gray-900 border border-gray-800 shadow-xl z-40 py-1 overflow-hidden">
+                <div className="absolute right-0 top-full mt-1.5 w-36 rounded-xl bg-white border border-gray-200 shadow-xl dark:bg-gray-900 dark:border-gray-800 z-40 py-1 overflow-hidden transition-colors duration-150">
                   <button
                     type="button"
                     onClick={() => {
                       setMenuOpen(false);
                       onEdit(habit);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white transition-colors"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     <span>Edit Habit</span>
@@ -147,7 +147,7 @@ export function HabitCard({
                         onDelete(habit.id);
                       }
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-300 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Delete</span>
@@ -161,4 +161,3 @@ export function HabitCard({
     </div>
   );
 }
-
