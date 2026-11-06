@@ -27,6 +27,7 @@ export default function OnboardingPage() {
   const [price, setPrice] = useState('85');
   const [location, setLocation] = useState('Austin, TX');
   const [years, setYears] = useState('6');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleSpecialty = (spec: Specialty) => {
     if (selectedSpecialties.includes(spec)) {
@@ -36,14 +37,43 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleComplete = (e: React.FormEvent) => {
+  const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (role === 'trainer') {
-      toast.success('Trainer profile saved! Welcome to your Repwise dashboard.');
-      router.push('/dashboard');
-    } else {
-      toast.success('Welcome to Repwise! Find coaches and begin your training.');
-      router.push('/trainers');
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        role,
+        name,
+        specialties: selectedSpecialties,
+        ...(role === 'trainer' && {
+          headline,
+          bio,
+          sessionPriceCents: Math.round(Number(price) * 100),
+          location,
+          yearsCoaching: Number(years),
+        }),
+      };
+
+      await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (role === 'trainer') {
+        toast.success('Trainer profile saved! Welcome to your Repwise dashboard.');
+        router.push('/dashboard');
+      } else {
+        toast.success('Welcome to Repwise! Find coaches and begin your training.');
+        router.push('/trainers');
+      }
+      router.refresh();
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error('Failed to save profile. Continuing anyway.');
+      router.push(role === 'trainer' ? '/dashboard' : '/trainers');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -157,8 +187,8 @@ export default function OnboardingPage() {
               </div>
 
               <div className="border-t border-border pt-6">
-                <Button type="submit" size="lg" className="w-full font-semibold">
-                  Start Training <ArrowRight className="size-4" />
+                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full font-semibold">
+                  {isSubmitting ? 'Saving...' : <>Start Training <ArrowRight className="size-4" /></>}
                 </Button>
               </div>
             </div>
@@ -295,8 +325,8 @@ export default function OnboardingPage() {
               </div>
 
               <div className="border-t border-border pt-6">
-                <Button type="submit" size="lg" className="w-full font-semibold">
-                  Launch Trainer Dashboard <ArrowRight className="size-4" />
+                <Button type="submit" size="lg" disabled={isSubmitting} className="w-full font-semibold">
+                  {isSubmitting ? 'Saving...' : <>Launch Trainer Dashboard <ArrowRight className="size-4" /></>}
                 </Button>
               </div>
             </div>
