@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowUpRight,
@@ -39,38 +39,41 @@ export function DashboardOverviewClient({
   const totalEarningsCents = sales.reduce((acc, curr) => acc + curr.amountCents, 0);
   const totalSalesCount = sales.length;
 
-  const simulateNewSale = () => {
-    const clientsList = ['Alex Rivera', 'Jordan Lee', 'Sam Patel', 'Nora Kim', 'Theo Grant'];
-    const randomName = clientsList[Math.floor(Math.random() * clientsList.length)];
-    const isProgram = Math.random() > 0.4;
-    const amount = isProgram ? 4900 : 8500;
-
-    const newSale: Purchase & { client: Profile; program?: any; slot?: any } = {
-      id: `pu-${Date.now()}`,
-      clientId: `c-demo-${Date.now()}`,
-      trainerId: 't-maya',
-      kind: isProgram ? 'program' : 'session',
-      programId: isProgram ? 'p-strong-base' : null,
-      slotId: isProgram ? null : 's-101',
-      amountCents: amount,
-      stripeSessionId: `cs_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      client: {
-        userId: `c-demo-${Date.now()}`,
-        role: 'client',
-        name: randomName,
-        avatarUrl: null,
-        coverUrl: null,
-        headline: null,
-        bio: null,
-        specialties: null,
-        sessionPriceCents: null,
-      },
-      program: isProgram ? { title: 'Strong Base: 8-Week Barbell' } : undefined,
+  // Poll live sales from Neon Postgres & Realtime
+  useEffect(() => {
+    const fetchLatestSales = async () => {
+      try {
+        const res = await fetch('/api/realtime/sales?trainerId=t-maya');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.sales && data.sales.length > 0) {
+            setSales(data.sales);
+          }
+        }
+      } catch (err) {
+        // quiet error
+      }
     };
 
-    setSales([newSale, ...sales]);
-    toast.success(`⚡ Live Event (Neon Realtime): ${randomName} paid ${formatPrice(amount)}!`);
+    const interval = setInterval(fetchLatestSales, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const simulateNewSale = async () => {
+    try {
+      const res = await fetch('/api/simulate-sale', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to simulate');
+
+      const newSale = data.purchase;
+      setSales((prev) => [newSale, ...prev.filter((p) => p.id !== newSale.id)]);
+      toast.success(
+        `⚡ Live Event (Neon Realtime tx: ${data.purchase.txid?.slice(0, 8) || 'committed'}): ${newSale.client.name} paid ${formatPrice(newSale.amountCents)}!`
+      );
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error('Simulation failed');
+    }
   };
 
   return (

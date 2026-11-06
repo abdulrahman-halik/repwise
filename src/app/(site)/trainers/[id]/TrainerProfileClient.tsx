@@ -62,36 +62,71 @@ export function TrainerProfileClient({
     setIsBookingOpen(true);
   };
 
-  const handleConfirmBooking = () => {
-    setBookingSuccess(true);
-    toast.success('Session booked successfully! Added to your Library.');
+  const handleConfirmBooking = async () => {
+    if (!selectedSlot) return;
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slotId: selectedSlot.id,
+          trainerId: trainer.userId,
+          amountCents: trainer.sessionPriceCents || 8500,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to book');
+
+      setBookingSuccess(true);
+      toast.success('Session booked successfully in Neon database! Added to your Library.');
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Booking failed');
+    }
   };
 
-  const handleAddReview = (e: React.FormEvent) => {
+  const handleAddReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newRev: Review & { client?: Profile } = {
-      id: `rev-${Date.now()}`,
-      trainerId: trainer.userId,
-      clientId: 'c-alex',
-      rating: reviewRating,
-      comment: reviewComment || 'Incredible session! Learned a ton.',
-      createdAt: new Date().toISOString(),
-      client: {
-        userId: 'c-alex',
-        name: 'Alex Rivera',
-        role: 'client',
-        avatarUrl: null,
-        coverUrl: null,
-        headline: null,
-        bio: null,
-        specialties: null,
-        sessionPriceCents: null,
-      },
-    };
-    setAllReviews([newRev, ...allReviews]);
-    setIsReviewOpen(false);
-    setReviewComment('');
-    toast.success('Thank you! Your verified review has been posted.');
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trainerId: trainer.userId,
+          rating: reviewRating,
+          comment: reviewComment || 'Incredible session! Learned a ton.',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to submit review');
+
+      const newRev: Review & { client?: Profile } = {
+        id: data.review?.id || `rev-${Date.now()}`,
+        trainerId: trainer.userId,
+        clientId: 'c-alex',
+        rating: reviewRating,
+        comment: reviewComment || 'Incredible session! Learned a ton.',
+        createdAt: new Date().toISOString(),
+        client: {
+          userId: 'c-alex',
+          name: 'You',
+          role: 'client',
+          avatarUrl: null,
+          coverUrl: null,
+          headline: null,
+          bio: null,
+          specialties: null,
+          sessionPriceCents: null,
+        },
+      };
+      setAllReviews([newRev, ...allReviews]);
+      setIsReviewOpen(false);
+      setReviewComment('');
+      toast.success('Thank you! Your verified review has been posted to Neon DB.');
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Review submission failed');
+    }
   };
 
   return (

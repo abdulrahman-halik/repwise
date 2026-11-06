@@ -36,28 +36,49 @@ export function SlotsManagementClient({
   const [datetime, setDatetime] = useState('');
   const [filter, setFilter] = useState<'all' | 'open' | 'held' | 'booked'>('all');
 
-  const handleAddSlot = (e: React.FormEvent) => {
+  const handleAddSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!datetime) return;
 
-    const newSlot: Slot = {
-      id: `s-${Date.now()}`,
-      trainerId: 't-maya',
-      startsAt: new Date(datetime).toISOString(),
-      status: 'open',
-      clientId: null,
-      heldUntil: null,
-    };
+    try {
+      const res = await fetch('/api/slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trainerId: 't-maya',
+          startsAt: new Date(datetime).toISOString(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to add slot');
 
-    setSlots([newSlot, ...slots]);
-    setIsAddOpen(false);
-    setDatetime('');
-    toast.success('Open 60-minute coaching slot added to calendar!');
+      const newSlot: Slot = data.slot || {
+        id: `s-${Date.now()}`,
+        trainerId: 't-maya',
+        startsAt: new Date(datetime).toISOString(),
+        status: 'open',
+        clientId: null,
+        heldUntil: null,
+      };
+
+      setSlots([newSlot, ...slots]);
+      setIsAddOpen(false);
+      setDatetime('');
+      toast.success('Open 60-minute coaching slot added to Neon DB!');
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error('Failed to create slot in database');
+    }
   };
 
-  const handleDeleteSlot = (id: string) => {
-    setSlots((prev) => prev.filter((s) => s.id !== id));
-    toast.info('Slot removed.');
+  const handleDeleteSlot = async (id: string) => {
+    try {
+      await fetch(`/api/slots?id=${id}`, { method: 'DELETE' });
+      setSlots((prev) => prev.filter((s) => s.id !== id));
+      toast.info('Slot removed from Neon DB.');
+    } catch (err: unknown) {
+      toast.error('Failed to remove slot');
+    }
   };
 
   const filteredSlots = slots.filter((s) => {

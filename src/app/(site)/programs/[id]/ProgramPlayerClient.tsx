@@ -66,10 +66,23 @@ export function ProgramPlayerClient({
     setIsPlaying(false);
   };
 
-  const handleCompletePurchase = () => {
-    setHasPurchased(true);
-    setIsBuyModalOpen(false);
-    toast.success(`Unlocked all ${lessons.length} lessons of ${program.title}!`);
+  const handleCompletePurchase = async () => {
+    try {
+      const res = await fetch('/api/programs/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ programId: program.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to purchase');
+
+      setHasPurchased(true);
+      setIsBuyModalOpen(false);
+      toast.success(`Unlocked all ${lessons.length} lessons of ${program.title} in Neon DB!`);
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Purchase failed');
+    }
   };
 
   return (
