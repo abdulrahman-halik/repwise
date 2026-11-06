@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   DollarSign,
   Dumbbell,
+  Edit3,
   Plus,
   Radio,
   Sparkles,
@@ -20,17 +21,20 @@ import { UserAvatar } from '@/components/site/UserAvatar';
 import { EarningsBarChart } from '@/components/dashboard/EarningsBarChart';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/format';
-import type { Profile, Purchase, Slot } from '@/lib/types';
+import type { Profile, Program, Purchase, Slot } from '@/lib/types';
 import { toast } from 'sonner';
 
 export function DashboardOverviewClient({
   initialSales,
   upcomingSessions,
+  initialPrograms = [],
 }: {
   initialSales: (Purchase & { client: Profile; program?: any; slot?: any })[];
   upcomingSessions: { slot: Slot; client: Profile }[];
+  initialPrograms?: Program[];
 }) {
   const [sales, setSales] = useState(initialSales);
+  const [programs] = useState(initialPrograms);
 
   const totalEarningsCents = sales.reduce((acc, curr) => acc + curr.amountCents, 0);
   const totalSalesCount = sales.length;
@@ -202,27 +206,28 @@ export function DashboardOverviewClient({
         </div>
       </div>
 
-      {/* Booked 1:1 Upcoming Sessions Schedule */}
-      <div className="rounded-3xl border border-border bg-surface p-6 sm:p-8">
-        <div className="mb-6 flex items-center justify-between border-b border-border pb-4">
-          <div>
-            <h3 className="font-display text-2xl uppercase">Booked 1:1 Calls</h3>
-            <p className="text-xs text-muted-foreground">Stream live video coaching sessions</p>
+      {/* Equal 2-Column Responsive Layout (50/50 Split): Booked 1:1 Calls (Left) & Your Programs (Right) */}
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+        {/* Left Module: Booked 1:1 Calls */}
+        <div className="flex flex-col h-full rounded-3xl border border-border bg-surface p-6 sm:p-8">
+          <div className="mb-6 flex items-center justify-between border-b border-border pb-4">
+            <div>
+              <h3 className="font-display text-2xl uppercase">Booked 1:1 Calls</h3>
+              <p className="text-xs text-muted-foreground">Stream live video coaching sessions</p>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/slots">All Slots</Link>
+            </Button>
           </div>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/dashboard/slots">All Slots</Link>
-          </Button>
-        </div>
 
-        <div>
-          {upcomingSessions.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {upcomingSessions.map(({ slot, client }) => {
+          <div className="flex-1 space-y-3 overflow-y-auto max-h-[440px] pr-1 scrollbar-thin">
+            {upcomingSessions.length > 0 ? (
+              upcomingSessions.map(({ slot, client }) => {
                 const date = new Date(slot.startsAt);
                 return (
                   <div
                     key={slot.id}
-                    className="flex flex-col justify-between rounded-2xl border border-border bg-surface-2 p-5"
+                    className="flex flex-col justify-between rounded-2xl border border-border bg-surface-2 p-4 transition-colors hover:border-primary/40"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -248,8 +253,8 @@ export function DashboardOverviewClient({
                       </span>
                     </div>
 
-                    <div className="mt-5 flex items-center justify-between border-t border-border pt-3">
-                      <span className="text-xs text-muted-foreground">Slot #{slot.id}</span>
+                    <div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3">
+                      <span className="text-xs text-muted-foreground font-mono">Slot #{slot.id}</span>
                       <Button asChild size="sm" className="font-semibold">
                         <Link href={`/call/${slot.id}`}>
                           <Video className="size-3.5" /> Launch Call Room
@@ -258,11 +263,79 @@ export function DashboardOverviewClient({
                     </div>
                   </div>
                 );
-              })}
+              })
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                <Calendar className="size-8 mb-2 opacity-50" />
+                <p className="text-sm">No upcoming booked sessions.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Module: Your Programs (Create & Manage) */}
+        <div className="flex flex-col h-full rounded-3xl border border-border bg-surface p-6 sm:p-8">
+          <div className="mb-6 flex items-center justify-between border-b border-border pb-4">
+            <div>
+              <h3 className="font-display text-2xl uppercase">Your Programs</h3>
+              <p className="text-xs text-muted-foreground">Active video courses & published plans</p>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No upcoming booked sessions.</p>
-          )}
+            <Button asChild size="sm" className="font-semibold">
+              <Link href="/dashboard/programs">
+                <Plus className="size-3.5" /> New Program
+              </Link>
+            </Button>
+          </div>
+
+          <div className="flex-1 space-y-3 overflow-y-auto max-h-[440px] pr-1 scrollbar-thin">
+            {programs.length > 0 ? (
+              programs.map((prog) => (
+                <div
+                  key={prog.id}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-surface-2 p-4 transition-colors hover:border-primary/40"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="grid size-10 shrink-0 place-items-center rounded-xl border border-border bg-surface text-lime-ink">
+                      <Dumbbell className="size-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="truncate text-sm font-semibold text-foreground">{prog.title}</h4>
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                            prog.published
+                              ? 'bg-primary/10 text-lime-ink'
+                              : 'bg-surface border border-border text-muted-foreground'
+                          }`}
+                        >
+                          {prog.published ? 'Published' : 'Draft'}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {prog.level} · {prog.weeks} weeks
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="font-display text-lg text-foreground">
+                      {formatPrice(prog.priceCents)}
+                    </span>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/dashboard/programs/${prog.id}`}>
+                        <Edit3 className="size-3.5" /> Edit
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                <Dumbbell className="size-8 mb-2 opacity-50" />
+                <p className="text-sm">No programs created yet.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
