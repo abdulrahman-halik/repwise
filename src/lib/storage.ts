@@ -97,3 +97,4 @@ export function resetHabitsToDefault(): Habit[] {
   saveHabitsToStorage(seeds);
   return seeds;
 }
+

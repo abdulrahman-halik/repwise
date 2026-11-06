@@ -65,3 +65,4 @@ A tactile, focused daily habit tracker interface designed with an emphasis on cl
 - **DO**: Support both today and retrospective checks for the current 7-day rolling window.
 - **DON'T**: Use purple or violet accent gradients.
 - **DON'T**: Rely on external database servers or auth gates that slow down habit logging.
+

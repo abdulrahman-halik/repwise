@@ -150,3 +150,4 @@ export function calculateHabitStats(completions: Record<string, boolean> = {}): 
     weeklyRate,
   };
 }
+
