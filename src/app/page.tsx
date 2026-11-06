@@ -10,7 +10,7 @@ import { HabitCard } from '@/components/HabitCard';
 import { HabitModal } from '@/components/HabitModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { EmptyState } from '@/components/EmptyState';
-import { Search, Filter } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 export default function HabitTrackerPage() {
   const {
@@ -86,17 +86,17 @@ export default function HabitTrackerPage() {
 
   if (!isHydrated) {
     return (
-      <div className="min-h-screen bg-[#090d16] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] flex items-center justify-center transition-colors duration-150">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
-          <span className="text-xs text-gray-400 font-medium tracking-wide">Loading Habits...</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-wide">Loading Habits...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#090d16] pb-24 text-gray-100">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] pb-24 text-gray-900 dark:text-gray-100 transition-colors duration-150">
       {/* Top Header */}
       <Header
         completedToday={stats.completedToday}
@@ -113,11 +113,12 @@ export default function HabitTrackerPage() {
           {/* Category Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button
+              type="button"
               onClick={() => setSelectedCategory('all')}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
                 selectedCategory === 'all'
-                  ? 'bg-gray-100 text-gray-950 font-semibold'
-                  : 'bg-gray-900/60 text-gray-400 hover:text-gray-200 border border-gray-800/80'
+                  ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-950 font-semibold shadow-xs'
+                  : 'bg-white text-gray-600 hover:text-gray-950 border border-gray-200/90 shadow-xs dark:bg-gray-900/60 dark:text-gray-400 dark:hover:text-gray-200 dark:border-gray-800/80'
               }`}
             >
               All Habits ({habits.length})
@@ -130,11 +131,12 @@ export default function HabitTrackerPage() {
               return (
                 <button
                   key={cat.id}
+                  type="button"
                   onClick={() => setSelectedCategory(cat.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
                     isSelected
-                      ? `${cat.bgClass} ${cat.colorClass} border border-emerald-500/30 font-semibold`
-                      : 'bg-gray-900/60 text-gray-400 hover:text-gray-200 border border-gray-800/80'
+                      ? `${cat.bgClass} ${cat.colorClass} border border-emerald-500/40 font-semibold shadow-xs`
+                      : 'bg-white text-gray-600 hover:text-gray-950 border border-gray-200/90 shadow-xs dark:bg-gray-900/60 dark:text-gray-400 dark:hover:text-gray-200 dark:border-gray-800/80'
                   }`}
                 >
                   <span>{cat.label}</span>
@@ -146,13 +148,13 @@ export default function HabitTrackerPage() {
 
           {/* Search Box */}
           <div className="relative sm:w-60">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter habits..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-gray-900/80 border border-gray-800 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40 focus:border-emerald-500/50 transition-all"
+              className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-white border border-gray-200/90 text-xs text-gray-900 placeholder-gray-400 shadow-xs focus:outline-none focus:ring-1 focus:ring-emerald-500/40 focus:border-emerald-500/50 dark:bg-gray-900/80 dark:border-gray-800 dark:text-gray-200 dark:placeholder-gray-500 transition-all"
             />
           </div>
         </div>
@@ -198,4 +200,3 @@ export default function HabitTrackerPage() {
     </div>
   );
 }
-
