@@ -24,6 +24,17 @@ const STATS = [
   ['4.9', 'Average rating'],
 ];
 
+const GOAL_CATEGORIES = [
+  { name: 'Strength', key: 'strength' },
+  { name: 'HIIT', key: 'hiit' },
+  { name: 'Fat Loss', key: 'fat loss' },
+  { name: 'Yoga', key: 'yoga' },
+  { name: 'Mobility', key: 'mobility' },
+  { name: 'Boxing', key: 'boxing' },
+  { name: 'Running', key: 'running' },
+  { name: 'Calisthenics', key: 'calisthenics' },
+];
+
 export default function LandingPage() {
   const trainers = featuredTrainers();
   const programs = allPublishedPrograms().slice(0, 4);
@@ -120,41 +131,44 @@ export default function LandingPage() {
       {/* SPECIALTIES / WORKOUTS FOR EVERY GOAL */}
       <section className="relative overflow-hidden border-t border-border bg-surface/40 py-20">
         <div className="container-page">
-          <SectionHeading
-            eyebrow="Specialties"
-            title="Workouts for Every Goal"
-            description="From strength to stress relief, find what moves you."
-            href="/trainers"
-            linkLabel="Browse all workouts"
-          />
+          {/* Header Row: Title & Subtitle on left, 'Discipline Builds Freedom' text simply on right (NO box) */}
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <p className="eyebrow mb-2">Specialties</p>
+              <h2 className="font-display text-4xl uppercase md:text-5xl">Workouts for Every Goal</h2>
+              <p className="mt-2 text-sm text-muted-foreground md:text-base">
+                From strength to stress relief, find what moves you.
+              </p>
+            </div>
 
-          <div className="mt-8 flex flex-col items-start justify-between gap-10 lg:flex-row lg:items-center">
-            {/* Specialty Pills */}
-            <ul className="flex flex-1 gap-4 overflow-x-auto pb-4 scrollbar-none md:flex-wrap md:gap-6">
-              {SPECIALTIES.map((s) => (
-                <li key={s}>
+            {/* Simple text on the right side - NO box container */}
+            <div className="md:text-right">
+              <p className="font-display text-3xl uppercase tracking-tight text-foreground sm:text-4xl md:text-5xl leading-none">
+                Discipline Builds <span className="text-lime-ink">Freedom</span>
+              </p>
+              <div className="mt-2 h-1 w-24 rounded-full bg-primary md:ml-auto" />
+            </div>
+          </div>
+
+          {/* Large Goal Icons on the same line */}
+          <div className="mt-12 overflow-x-auto pb-4 scrollbar-none">
+            <ul className="flex items-center justify-between gap-6 min-w-[780px] lg:min-w-0">
+              {GOAL_CATEGORIES.map((item) => (
+                <li key={item.name} className="flex-1">
                   <Link
-                    href={`/trainers?specialty=${s.toLowerCase()}`}
-                    className="group flex w-20 flex-col items-center gap-3 md:w-24"
+                    href={`/trainers?specialty=${encodeURIComponent(item.key)}`}
+                    className="group flex flex-col items-center gap-3 transition-transform hover:-translate-y-1"
                   >
-                    <span className="grid size-16 place-items-center rounded-full border border-border bg-surface text-lime-ink transition-all group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground md:size-20">
-                      <SpecialtyIcon specialty={s} className="size-6 md:size-7" />
+                    <span className="grid size-20 sm:size-22 md:size-24 place-items-center rounded-full border border-border/80 bg-[#121713] text-lime-ink transition-all group-hover:border-primary group-hover:bg-[#18201a]">
+                      <SpecialtyIcon specialty={item.name} className="size-8 sm:size-9 md:size-10" />
                     </span>
-                    <span className="text-sm font-medium">{s}</span>
+                    <span className="text-xs sm:text-sm font-medium text-foreground tracking-wide text-center whitespace-nowrap">
+                      {item.name}
+                    </span>
                   </Link>
                 </li>
               ))}
             </ul>
-
-            {/* Clearly visible DISCIPLINE BUILDS FREEDOM block inspired by design-ref */}
-            <div className="shrink-0 rounded-2xl border border-border bg-surface p-6 sm:p-8">
-              <div className="font-display text-4xl uppercase tracking-tight text-foreground sm:text-5xl lg:text-6xl leading-[0.9]">
-                Discipline<br />
-                Builds<br />
-                <span className="text-lime-ink">Freedom</span>
-              </div>
-              <div className="mt-3 h-1 w-24 rounded-full bg-primary" />
-            </div>
           </div>
         </div>
       </section>

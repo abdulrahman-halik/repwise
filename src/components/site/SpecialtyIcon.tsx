@@ -1,4 +1,5 @@
 import {
+  Accessibility,
   Activity,
   BicepsFlexed,
   Dumbbell,
@@ -7,23 +8,31 @@ import {
   Footprints,
   HandFist,
   HeartPulse,
+  Target,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
-import type { Specialty } from '@/lib/types';
 
-export const SPECIALTY_ICONS: Record<Specialty, LucideIcon> = {
+export const SPECIALTY_ICONS: Record<string, LucideIcon> = {
   Strength: Dumbbell,
-  HIIT: Flame,
+  HIIT: Zap,
+  'Fat Loss': Flame,
   Yoga: Flower2,
-  Mobility: Activity,
+  Mobility: Accessibility,
   Hypertrophy: BicepsFlexed,
+  Boxing: Target,
   Running: Footprints,
-  Boxing: HandFist,
   Recovery: HeartPulse,
+  Calisthenics: Activity,
 };
 
-export function SpecialtyIcon({ specialty, className }: { specialty: Specialty; className?: string }) {
-  const Icon = SPECIALTY_ICONS[specialty];
-  return <Icon className={className} aria-hidden />;
+export function SpecialtyIcon({
+  specialty,
+  className,
+}: {
+  specialty: string;
+  className?: string;
+}) {
+  const Icon = SPECIALTY_ICONS[specialty] || Dumbbell;
+  return <Icon className={className} aria-hidden strokeWidth={1.8} />;
 }
-
