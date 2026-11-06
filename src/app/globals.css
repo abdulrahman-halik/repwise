@@ -31,6 +31,11 @@
   --color-ring: var(--ring);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
   /* Lime used as TEXT — darker in light mode for contrast. */
   --color-lime-ink: var(--lime-ink);
   --color-lime: #c6ff3d;
@@ -67,6 +72,11 @@
   --input: #d9ddd3;
   --ring: #8fc21a;
   --lime-ink: #4f7a00;
+  --chart-1: #4f7a00;
+  --chart-2: #232a25;
+  --chart-3: #5d665f;
+  --chart-4: #8fc21a;
+  --chart-5: #e1e4dc;
 }
 
 /* Dark theme (default) */
@@ -92,6 +102,11 @@
   --input: #2a322c;
   --ring: #c6ff3d;
   --lime-ink: #c6ff3d;
+  --chart-1: #c6ff3d;
+  --chart-2: #232a25;
+  --chart-3: #8e978f;
+  --chart-4: #171c18;
+  --chart-5: #111512;
 }
 
 @layer base {

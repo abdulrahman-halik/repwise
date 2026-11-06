@@ -17,6 +17,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/site/UserAvatar';
+import { EarningsBarChart } from '@/components/dashboard/EarningsBarChart';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/lib/format';
 import type { Profile, Purchase, Slot } from '@/lib/types';
@@ -140,6 +141,9 @@ export function DashboardOverviewClient({
           <p className="mt-1 text-xs text-muted-foreground">100% positive reviews</p>
         </div>
       </div>
+
+      {/* Revenue Analytics Bar Chart (Solid Single-Color Design) */}
+      <EarningsBarChart />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_1fr]">
         {/* Left: Neon Realtime Live Sales Feed */}
