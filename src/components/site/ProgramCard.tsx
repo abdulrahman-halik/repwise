@@ -15,7 +15,7 @@ export function ProgramCard({ program, showTrainer = true }: { program: Program;
     >
       <div className="relative aspect-[16/10]">
         <Photo src={program.coverUrl} alt={program.title} seed={program.id} position="70% 30%" className="absolute inset-0" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+        <div className="absolute inset-0 bg-black/40" />
         <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
           {program.level} · {program.weeks} weeks
         </span>

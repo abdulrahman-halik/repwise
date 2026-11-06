@@ -99,8 +99,8 @@ export function ProgramPlayerClient({
                   className={`size-full transition-transform duration-700 ${isPlaying ? 'scale-105 filter brightness-110' : 'filter brightness-75'}`}
                 />
 
-                {/* Subtle dark gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+                {/* Clean solid dark overlay */}
+                <div className="absolute inset-0 bg-black/30 pointer-events-none" />
 
                 {/* Watermark / status badge */}
                 <div className="absolute left-4 top-4 z-10 flex items-center gap-2">
@@ -121,14 +121,14 @@ export function ProgramPlayerClient({
                     className="group absolute inset-0 z-10 grid place-items-center bg-black/30 backdrop-blur-[2px] transition-all hover:bg-black/20"
                     aria-label="Play video"
                   >
-                    <div className="grid size-20 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_0_30px_rgba(198,255,61,0.5)] transition-transform group-hover:scale-110">
+                    <div className="grid size-20 place-items-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:scale-110">
                       <Play className="size-8 translate-x-0.5 fill-current" />
                     </div>
                   </button>
                 )}
 
                 {/* Controls Bar */}
-                <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between bg-gradient-to-t from-black/95 via-black/60 to-transparent p-4 text-white">
+                <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between bg-[#0A0D0B]/90 border-t border-white/10 p-4 text-white">
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => setIsPlaying(!isPlaying)}

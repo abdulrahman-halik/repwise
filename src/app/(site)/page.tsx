@@ -24,6 +24,17 @@ const STATS = [
   ['4.9', 'Average rating'],
 ];
 
+const GOAL_CATEGORIES = [
+  { name: 'Strength', key: 'strength' },
+  { name: 'HIIT', key: 'hiit' },
+  { name: 'Fat Loss', key: 'fat loss' },
+  { name: 'Yoga', key: 'yoga' },
+  { name: 'Mobility', key: 'mobility' },
+  { name: 'Boxing', key: 'boxing' },
+  { name: 'Running', key: 'running' },
+  { name: 'Calisthenics', key: 'calisthenics' },
+];
+
 export default function LandingPage() {
   const trainers = featuredTrainers();
   const programs = allPublishedPrograms().slice(0, 4);
@@ -41,8 +52,7 @@ export default function LandingPage() {
           sizes="100vw"
           className="-z-10 object-cover object-[68%_center] opacity-90 md:object-right"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-background via-background/85 to-background/0 md:via-background/60" />
-        <div className="absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-background to-transparent" />
+        <div className="absolute inset-0 -z-10 bg-[#0A0D0B]/80" />
 
         <div className="container-page relative grid min-h-[calc(100svh-4rem)] items-center gap-10 py-16 md:grid-cols-[1.25fr_1fr] md:py-24">
           <div className="max-w-2xl">
@@ -118,29 +128,48 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SPECIALTIES */}
+      {/* SPECIALTIES / WORKOUTS FOR EVERY GOAL */}
       <section className="relative overflow-hidden border-t border-border bg-surface/40 py-20">
-        <p aria-hidden className="font-display pointer-events-none absolute -right-6 top-1/2 hidden -translate-y-1/2 text-right text-[120px] leading-[0.85] text-foreground/[0.04] lg:block">
-          Discipline
-          <br />
-          builds
-          <br />
-          freedom
-        </p>
-        <div className="container-page relative">
-          <SectionHeading eyebrow="Specialties" title="A coach for every goal" description="From heavy barbells to deep stretches — find what moves you." />
-          <ul className="flex gap-4 overflow-x-auto pb-2 md:flex-wrap md:gap-6">
-            {SPECIALTIES.map((s) => (
-              <li key={s}>
-                <Link href={`/trainers?specialty=${s.toLowerCase()}`} className="group flex w-20 flex-col items-center gap-3 md:w-24">
-                  <span className="grid size-16 place-items-center rounded-full border border-border bg-surface text-lime-ink transition-all group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground md:size-20">
-                    <SpecialtyIcon specialty={s} className="size-6 md:size-7" />
-                  </span>
-                  <span className="text-sm font-medium">{s}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <div className="container-page">
+          {/* Header Row: Title & Subtitle on left, 'Discipline Builds Freedom' text simply on right (NO box) */}
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <p className="eyebrow mb-2">Specialties</p>
+              <h2 className="font-display text-4xl uppercase md:text-5xl">Workouts for Every Goal</h2>
+              <p className="mt-2 text-sm text-muted-foreground md:text-base">
+                From strength to stress relief, find what moves you.
+              </p>
+            </div>
+
+            {/* Simple text on the right side - NO box container */}
+            <div className="md:text-right">
+              <p className="font-display text-3xl uppercase tracking-tight text-foreground sm:text-4xl md:text-5xl leading-none">
+                Discipline Builds <span className="text-lime-ink">Freedom</span>
+              </p>
+              <div className="mt-2 h-1 w-24 rounded-full bg-primary md:ml-auto" />
+            </div>
+          </div>
+
+          {/* Large Goal Icons on the same line */}
+          <div className="mt-12 overflow-x-auto pb-4 scrollbar-none">
+            <ul className="flex items-center justify-between gap-6 min-w-[780px] lg:min-w-0">
+              {GOAL_CATEGORIES.map((item) => (
+                <li key={item.name} className="flex-1">
+                  <Link
+                    href={`/trainers?specialty=${encodeURIComponent(item.key)}`}
+                    className="group flex flex-col items-center gap-3 transition-transform hover:-translate-y-1"
+                  >
+                    <span className="grid size-20 sm:size-22 md:size-24 place-items-center rounded-full border border-border/80 bg-[#121713] text-lime-ink transition-all group-hover:border-primary group-hover:bg-[#18201a]">
+                      <SpecialtyIcon specialty={item.name} className="size-8 sm:size-9 md:size-10" />
+                    </span>
+                    <span className="text-xs sm:text-sm font-medium text-foreground tracking-wide text-center whitespace-nowrap">
+                      {item.name}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
@@ -234,7 +263,6 @@ export default function LandingPage() {
       <section className="py-12">
         <div className="container-page">
           <div className="relative isolate overflow-hidden rounded-3xl border border-border bg-surface-2 p-8 md:p-12">
-            <div className="absolute -right-20 -top-20 -z-10 size-80 rounded-full bg-primary/10 blur-3xl" />
             <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
               <div className="max-w-xl">
                 <span className="eyebrow">Repwise Community</span>
@@ -256,9 +284,8 @@ export default function LandingPage() {
         <div className="container-page">
           <div className="relative overflow-hidden rounded-3xl border border-border bg-surface">
             <div className="grid items-center gap-8 md:grid-cols-[280px_1fr_auto]">
-              <div className="dark relative hidden h-full min-h-48 md:block">
+              <div className="dark relative hidden h-full min-h-48 md:block border-r border-border">
                 <Image src="/images/hero.png" alt="" fill sizes="280px" className="object-cover object-[72%_25%]" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent to-surface" />
               </div>
               <div className="p-8 md:p-0">
                 <p className="eyebrow mb-3">For trainers</p>
@@ -284,7 +311,6 @@ export default function LandingPage() {
 function SessionMock() {
   return (
     <div className="relative mx-auto w-full max-w-lg">
-      <div className="absolute -inset-10 -z-10 rounded-full bg-[#c6ff3d]/10 blur-3xl" />
       <div className="dark overflow-hidden rounded-3xl border border-border bg-[#0d110e] p-3 text-foreground shadow-2xl">
         <div className="flex items-center justify-between px-2 pb-3 pt-1 text-xs">
           <span className="inline-flex items-center gap-2 font-medium">

@@ -89,7 +89,7 @@ Flat surfaces with 1px borders. Depth comes from photography, dark vignettes ove
 12px radius for buttons/inputs, 18px for cards, full pills for chips and avatars.
 
 ## Components
-- **TrainerCard** – tall portrait image, gradient scrim, name/headline/rating/price over the image.
+- **TrainerCard** – tall portrait image, solid dark scrim (`bg-black/55`), name/headline/rating/price over the image.
 - **ProgramCard** – cover with lesson count + price, "Explore" outlined button.
 - **SpecialtyChip** – round icon tile + label (from the reference "Workouts for every goal" row).
 - **SlotPill** – date/time pill; open = outlined, selected = lime.
