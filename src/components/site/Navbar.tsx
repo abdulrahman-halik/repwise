@@ -8,6 +8,8 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { authClient } from '@/lib/auth/client';
+import { useRouter } from 'next/navigation';
 
 const LINKS = [
   { href: '/trainers', label: 'Trainers' },
@@ -18,7 +20,15 @@ const LINKS = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+  const handleSignOut = async () => {
+    await authClient.signOut();
+    router.push('/');
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
@@ -45,12 +55,30 @@ export function Navbar() {
         {/* Right Actions */}
         <div className="ml-auto flex items-center gap-3">
           <ThemeToggle />
-          <Button asChild variant="ghost" className="hidden sm:inline-flex text-muted-foreground hover:text-foreground">
-            <Link href="/auth/sign-in">Log in</Link>
-          </Button>
-          <Button asChild className="font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
-            <Link href="/auth/sign-up">Join now</Link>
-          </Button>
+          {session?.user ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground hidden sm:inline-block">
+                {session.user.name || session.user.email}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                className="text-xs font-semibold"
+              >
+                Sign out
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Button asChild variant="ghost" className="hidden sm:inline-flex text-muted-foreground hover:text-foreground">
+                <Link href="/auth/sign-in">Log in</Link>
+              </Button>
+              <Button asChild className="font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
+                <Link href="/auth/sign-up">Join now</Link>
+              </Button>
+            </>
+          )}
 
           {/* Mobile Sheet Menu */}
           <Sheet>

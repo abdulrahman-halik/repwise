@@ -3,20 +3,54 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Lock, Mail } from 'lucide-react';
+import { ArrowRight, Loader2, Lock, Mail } from 'lucide-react';
 import { Logo } from '@/components/site/Logo';
 import { Button } from '@/components/ui/button';
+import { authClient } from '@/lib/auth/client';
 import { toast } from 'sonner';
 
 export default function SignInPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('alex@repwise.demo');
-  const [password, setPassword] = useState('demo1234');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Signed in successfully (Neon Auth demo session).');
-    router.push('/library');
+    setLoading(true);
+    try {
+      const { data, error } = await authClient.signIn.email({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error(error.message || 'Failed to sign in. Please check your credentials.');
+        setLoading(false);
+        return;
+      }
+
+      toast.success('Signed in successfully with Neon Auth.');
+      router.push('/library');
+      router.refresh();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/library',
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Social sign-in failed';
+      toast.error(msg);
+    }
   };
 
   return (
@@ -28,7 +62,7 @@ export default function SignInPage() {
           </div>
           <h1 className="font-display mt-4 text-3xl uppercase">Welcome Back</h1>
           <p className="mt-1 text-xs text-muted-foreground">
-            Sign in to access your workout programs and coaching calls.
+            Sign in with your Neon Auth credentials to access your workout programs and coaching calls.
           </p>
         </div>
 
@@ -44,6 +78,7 @@ export default function SignInPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
                 className="h-11 w-full rounded-xl border border-border bg-surface-2 pl-10 pr-4 text-sm text-foreground focus:border-primary focus:outline-none"
               />
             </div>
@@ -65,13 +100,14 @@ export default function SignInPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
                 className="h-11 w-full rounded-xl border border-border bg-surface-2 pl-10 pr-4 text-sm text-foreground focus:border-primary focus:outline-none"
               />
             </div>
           </div>
 
-          <Button type="submit" size="lg" className="mt-2 w-full font-semibold">
-            Sign In <ArrowRight className="size-4" />
+          <Button type="submit" size="lg" disabled={loading} className="mt-2 w-full font-semibold">
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <>Sign In <ArrowRight className="size-4" /></>}
           </Button>
 
           <div className="relative my-6 text-center">
@@ -85,10 +121,7 @@ export default function SignInPage() {
 
           <button
             type="button"
-            onClick={() => {
-              toast.success('Signed in with Google (Neon Auth mock).');
-              router.push('/library');
-            }}
+            onClick={handleGoogleSignIn}
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface-2 text-xs font-semibold transition-colors hover:bg-surface"
           >
             <svg className="size-4" viewBox="0 0 24 24">
@@ -123,4 +156,3 @@ export default function SignInPage() {
     </div>
   );
 }
-
