@@ -1,21 +1,39 @@
 import type { Metadata } from 'next';
+import { Barlow_Condensed, Caveat, Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { themeInitScript } from '@/lib/theme-script';
+import { cn } from '@/lib/utils';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const barlow = Barlow_Condensed({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-barlow' });
+const caveat = Caveat({ subsets: ['latin'], weight: ['700'], variable: '--font-caveat' });
 
 export const metadata: Metadata = {
-  title: 'Repwise Habit Tracker - Simple Daily Consistency',
-  description: 'A minimalist, client-side daily habit tracker with streaks, dark mode, and weekly progress.',
+  title: { default: 'Repwise — Train with coaches who get results', template: '%s · Repwise' },
+  description:
+    'Find a personal trainer, buy video workout programs and book live 1:1 sessions. Strength, HIIT, yoga, mobility and more.',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-slate-50 text-gray-900 dark:bg-[#090d16] dark:text-gray-100 antialiased selection:bg-emerald-500/20 selection:text-emerald-700 dark:selection:text-emerald-300 transition-colors duration-150">
-        <ThemeProvider>{children}</ThemeProvider>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={cn('dark', inter.variable, barlow.variable, caveat.variable)}
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-screen">
+        <ThemeProvider>
+          <TooltipProvider>
+            {children}
+            <Toaster position="bottom-right" />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

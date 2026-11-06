@@ -1,52 +1,162 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
+/* Class-based dark mode, toggled by ThemeContext + the inline head script. */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-barlow);
+  --font-heading: var(--font-barlow);
+  --font-script: var(--font-caveat);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  /* Lime used as TEXT — darker in light mode for contrast. */
+  --color-lime-ink: var(--lime-ink);
+  --color-lime: #c6ff3d;
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+}
+
+/* Light theme */
 :root {
-  --color-canvas: #f8fafc;
-  --color-surface: #ffffff;
-  --color-border: #e2e8f0;
-  --color-primary: #10b981;
-  --color-accent: #f59e0b;
+  --radius: 0.75rem;
+  --background: #f5f6f1;
+  --foreground: #0b0f0c;
+  --surface: #ffffff;
+  --surface-2: #eef0e9;
+  --card: #ffffff;
+  --card-foreground: #0b0f0c;
+  --popover: #ffffff;
+  --popover-foreground: #0b0f0c;
+  --primary: #c6ff3d;
+  --primary-foreground: #0a0d0b;
+  --secondary: #eceee7;
+  --secondary-foreground: #0b0f0c;
+  --muted: #eceee7;
+  --muted-foreground: #5d665f;
+  --accent: #eceee7;
+  --accent-foreground: #0b0f0c;
+  --destructive: #e5483b;
+  --border: #e1e4dc;
+  --input: #d9ddd3;
+  --ring: #8fc21a;
+  --lime-ink: #4f7a00;
 }
 
+/* Dark theme (default) */
 .dark {
-  --color-canvas: #090d16;
-  --color-surface: #111827;
-  --color-border: #1f2937;
-  --color-primary: #10b981;
-  --color-accent: #f59e0b;
+  --background: #0a0d0b;
+  --foreground: #f1f4ef;
+  --surface: #111512;
+  --surface-2: #171c18;
+  --card: #111512;
+  --card-foreground: #f1f4ef;
+  --popover: #141915;
+  --popover-foreground: #f1f4ef;
+  --primary: #c6ff3d;
+  --primary-foreground: #0a0d0b;
+  --secondary: #1b211d;
+  --secondary-foreground: #f1f4ef;
+  --muted: #1b211d;
+  --muted-foreground: #8e978f;
+  --accent: #1b211d;
+  --accent-foreground: #f1f4ef;
+  --destructive: #ff5a4e;
+  --border: #232a25;
+  --input: #2a322c;
+  --ring: #c6ff3d;
+  --lime-ink: #c6ff3d;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  ::selection {
+    background: #c6ff3d;
+    color: #0a0d0b;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
-/* Custom scrollbars */
+@layer components {
+  .font-display {
+    font-family: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 0.92;
+    letter-spacing: -0.005em;
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-lime-ink;
+  }
+  .font-script {
+    font-family: var(--font-caveat), cursive;
+    font-weight: 700;
+    line-height: 0.9;
+  }
+  .container-page {
+    @apply mx-auto w-full max-w-[1240px] px-5 md:px-8;
+  }
+  /* Subtle grain over photography / placeholders. */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.18;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--border);
   border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #1f2937;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
 }
