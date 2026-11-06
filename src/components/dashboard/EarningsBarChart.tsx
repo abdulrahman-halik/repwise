@@ -41,7 +41,7 @@ const DATA_6M: DataPoint[] = [
   { label: 'Nov', sublabel: 'Current', amountCents: 512000, programsCents: 198000, sessionsCents: 314000, ordersCount: 66 },
 ];
 
-export function EarningsBarChart() {
+export function EarningsBarChart({ className }: { className?: string } = {}) {
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -52,7 +52,7 @@ export function EarningsBarChart() {
   const activePoint = hoveredIndex !== null ? dataset[hoveredIndex] : dataset[dataset.length - 1];
 
   return (
-    <div className="rounded-3xl border border-border bg-surface p-6 sm:p-8">
+    <div className={`rounded-3xl border border-border bg-surface p-6 sm:p-8 flex flex-col justify-between ${className ?? ''}`}>
       {/* Chart Header */}
       <div className="flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-center">
         <div>
