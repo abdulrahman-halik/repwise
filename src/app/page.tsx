@@ -8,7 +8,6 @@ import { CATEGORIES } from '@/lib/constants';
 import { Header } from '@/components/Header';
 import { HabitCard } from '@/components/HabitCard';
 import { HabitModal } from '@/components/HabitModal';
-import { SettingsModal } from '@/components/SettingsModal';
 import { EmptyState } from '@/components/EmptyState';
 import { Search } from 'lucide-react';
 
@@ -104,7 +103,6 @@ export default function HabitTrackerPage() {
         todayCompletionRate={stats.todayCompletionRate}
         maxCurrentStreak={stats.maxCurrentStreak}
         onOpenNewHabit={handleOpenNewHabit}
-        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-6">
@@ -115,11 +113,10 @@ export default function HabitTrackerPage() {
             <button
               type="button"
               onClick={() => setSelectedCategory('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                selectedCategory === 'all'
-                  ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-950 font-semibold shadow-xs'
-                  : 'bg-white text-gray-600 hover:text-gray-950 border border-gray-200/90 shadow-xs dark:bg-gray-900/60 dark:text-gray-400 dark:hover:text-gray-200 dark:border-gray-800/80'
-              }`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${selectedCategory === 'all'
+                ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-950 font-semibold shadow-xs'
+                : 'bg-white text-gray-600 hover:text-gray-950 border border-gray-200/90 shadow-xs dark:bg-gray-900/60 dark:text-gray-400 dark:hover:text-gray-200 dark:border-gray-800/80'
+                }`}
             >
               All Habits ({habits.length})
             </button>
@@ -133,11 +130,10 @@ export default function HabitTrackerPage() {
                   key={cat.id}
                   type="button"
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                    isSelected
-                      ? `${cat.bgClass} ${cat.colorClass} border border-emerald-500/40 font-semibold shadow-xs`
-                      : 'bg-white text-gray-600 hover:text-gray-950 border border-gray-200/90 shadow-xs dark:bg-gray-900/60 dark:text-gray-400 dark:hover:text-gray-200 dark:border-gray-800/80'
-                  }`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${isSelected
+                    ? `${cat.bgClass} ${cat.colorClass} border border-emerald-500/40 font-semibold shadow-xs`
+                    : 'bg-white text-gray-600 hover:text-gray-950 border border-gray-200/90 shadow-xs dark:bg-gray-900/60 dark:text-gray-400 dark:hover:text-gray-200 dark:border-gray-800/80'
+                    }`}
                 >
                   <span>{cat.label}</span>
                   {count > 0 && <span className="text-[10px] opacity-70">({count})</span>}
@@ -187,15 +183,6 @@ export default function HabitTrackerPage() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveHabit}
         editingHabit={editingHabit}
-      />
-
-      {/* Settings & Backup Modal */}
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        onExport={exportData}
-        onImport={importData}
-        onReset={resetToDefaults}
       />
     </div>
   );

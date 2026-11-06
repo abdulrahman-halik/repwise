@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Plus, Sliders, Flame, CheckCircle2 } from 'lucide-react';
+import { Plus, Flame, CheckCircle2 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
@@ -10,7 +10,6 @@ interface HeaderProps {
   todayCompletionRate: number;
   maxCurrentStreak: number;
   onOpenNewHabit: () => void;
-  onOpenSettings: () => void;
 }
 
 export function Header({
@@ -19,7 +18,6 @@ export function Header({
   todayCompletionRate,
   maxCurrentStreak,
   onOpenNewHabit,
-  onOpenSettings,
 }: HeaderProps) {
   const todayFormatted = new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
@@ -48,17 +46,6 @@ export function Header({
           <div className="flex items-center gap-2">
             {/* Quick theme toggle switch */}
             <ThemeToggle />
-
-            {/* Settings & Backups */}
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="p-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 hover:text-gray-950 hover:border-gray-300 hover:bg-gray-100 shadow-xs dark:border-gray-800 dark:bg-gray-900/80 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-700 dark:hover:bg-gray-800/90 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
-              title="Data & Backup Settings"
-              aria-label="Open settings"
-            >
-              <Sliders className="w-4 h-4" />
-            </button>
 
             {/* New Habit action */}
             <button
