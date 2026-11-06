@@ -2,10 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
 import { Logo } from './Logo';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { authClient } from '@/lib/auth/client';
@@ -29,6 +36,14 @@ export function Navbar() {
     router.push('/');
     router.refresh();
   };
+
+  const userInitial = (
+    session?.user?.name?.trim()?.[0] ||
+    session?.user?.email?.[0] ||
+    'U'
+  ).toUpperCase();
+  const userName = session?.user?.name || 'User';
+  const userEmail = session?.user?.email || '';
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
@@ -56,19 +71,60 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-3">
           <ThemeToggle />
           {session?.user ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground hidden sm:inline-block">
-                {session.user.name || session.user.email}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="text-xs font-semibold"
-              >
-                Sign out
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="relative flex size-9 shrink-0 items-center justify-center rounded-full bg-[#0284c7] text-white font-semibold text-sm shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#0284c7] focus:ring-offset-2 focus:ring-offset-background"
+                  aria-label="User account menu"
+                >
+                  {session.user.image ? (
+                    <img
+                      src={session.user.image}
+                      alt={userName}
+                      className="size-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span>{userInitial}</span>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 p-3 bg-surface border border-border shadow-2xl rounded-2xl">
+                {/* Header with avatar, name, and email */}
+                <div className="flex items-center gap-3 pb-2">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#0284c7] text-white font-semibold text-base shadow-sm">
+                    {session.user.image ? (
+                      <img
+                        src={session.user.image}
+                        alt={userName}
+                        className="size-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <span>{userInitial}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-semibold text-foreground text-sm truncate leading-tight">
+                      {userName}
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate leading-tight mt-0.5">
+                      {userEmail}
+                    </span>
+                  </div>
+                </div>
+
+                <DropdownMenuSeparator className="my-2 bg-border" />
+
+                {/* Sign Out item */}
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-foreground hover:bg-surface-2 focus:bg-surface-2 transition-colors"
+                >
+                  <LogOut className="size-4 shrink-0 text-muted-foreground" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <>
               <Button asChild variant="ghost" className="hidden sm:inline-flex text-muted-foreground hover:text-foreground">
@@ -106,12 +162,36 @@ export function Navbar() {
                 ))}
               </nav>
               <div className="mt-auto grid gap-2 p-4 border-t border-border">
-                <Button asChild variant="outline">
-                  <Link href="/auth/sign-in">Log in</Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/auth/sign-up">Join now</Link>
-                </Button>
+                {session?.user ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#0284c7] text-white font-semibold text-base shadow-sm">
+                        {userInitial}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold text-foreground truncate">{userName}</div>
+                        <div className="text-xs text-muted-foreground truncate">{userEmail}</div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full flex items-center justify-center gap-2"
+                      onClick={handleSignOut}
+                    >
+                      <LogOut className="size-4" />
+                      <span>Sign Out</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Button asChild variant="outline">
+                      <Link href="/auth/sign-in">Log in</Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href="/auth/sign-up">Join now</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </SheetContent>
           </Sheet>
