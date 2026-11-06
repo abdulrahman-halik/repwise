@@ -93,15 +93,9 @@ export function Navbar() {
                 {/* Header with avatar, name, and email */}
                 <div className="flex items-center gap-3 pb-2">
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#0284c7] text-white font-semibold text-base shadow-sm">
-                    {session.user.image ? (
-                      <img
-                        src={session.user.image}
-                        alt={userName}
-                        className="size-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <span>{userInitial}</span>
-                    )}
+
+                    <span>{userInitial}</span>
+
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="font-semibold text-foreground text-sm truncate leading-tight">
