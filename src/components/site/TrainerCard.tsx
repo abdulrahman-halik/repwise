@@ -21,7 +21,7 @@ export function TrainerCard({ trainer, priority }: { trainer: Profile; priority?
         priority={priority}
         className="absolute inset-0 transition-transform duration-500 group-hover:scale-[1.04]"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+      <div className="absolute inset-0 bg-black/55" />
 
       <div className="absolute left-4 top-4 flex flex-wrap gap-1.5">
         {trainer.specialties?.slice(0, 2).map((s) => (

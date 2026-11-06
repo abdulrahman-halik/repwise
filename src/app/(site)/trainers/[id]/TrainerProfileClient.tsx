@@ -98,8 +98,6 @@ export function TrainerProfileClient({
     <div className="container-page py-10 md:py-16">
       {/* Hero Profile Header */}
       <div className="relative overflow-hidden rounded-3xl border border-border bg-surface p-6 md:p-10">
-        <div className="absolute right-0 top-0 -z-10 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-
         <div className="flex flex-col gap-8 md:flex-row md:items-start">
           {/* Avatar / Portrait */}
           <div className="relative aspect-square w-36 shrink-0 overflow-hidden rounded-2xl border border-border bg-surface-2 sm:w-44">

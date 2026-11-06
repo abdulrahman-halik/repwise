@@ -106,7 +106,7 @@ export function ProgramsListClient({
                 seed={prog.id}
                 className="size-full"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+              <div className="absolute inset-0 bg-black/40" />
               <div className="absolute left-3 top-3 flex items-center gap-2">
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${

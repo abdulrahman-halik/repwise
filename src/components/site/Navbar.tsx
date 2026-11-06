@@ -2,48 +2,38 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, LibraryBig, LogOut, Menu, MessageSquare, Search, UserRoundCog } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Logo } from './Logo';
-import { UserAvatar } from './UserAvatar';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
 const LINKS = [
   { href: '/trainers', label: 'Trainers' },
-  { href: '/library', label: 'Library' },
+  { href: '/library', label: 'My Library' },
   { href: '/messages', label: 'Messages' },
+  { href: '/dashboard', label: 'Trainer Dashboard' },
 ];
-
-// Demo-only: the navbar renders a signed-in client. Swap for the Neon Auth session later.
-const DEMO_USER = { name: 'Alex Rivera', email: 'alex@repwise.demo' };
 
 export function Navbar() {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/75 backdrop-blur-xl">
-      <div className="container-page flex h-16 items-center gap-6">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
+      <div className="container-page flex h-16 items-center gap-8">
         <Logo />
 
+        {/* Main Desktop Navigation */}
         <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
           {LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               className={cn(
-                'rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
-                isActive(l.href) && 'text-foreground',
+                'rounded-lg px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
+                isActive(l.href) && 'text-foreground font-semibold',
               )}
             >
               {l.label}
@@ -52,54 +42,48 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
-          <Button asChild variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Find trainers">
-            <Link href="/trainers"><Search /></Link>
-          </Button>
+        {/* Right Actions */}
+        <div className="ml-auto flex items-center gap-3">
           <ThemeToggle />
-          <Button asChild variant="ghost" className="hidden lg:inline-flex">
+          <Button asChild variant="ghost" className="hidden sm:inline-flex text-muted-foreground hover:text-foreground">
             <Link href="/auth/sign-in">Log in</Link>
           </Button>
-          <Button asChild className="hidden lg:inline-flex">
+          <Button asChild className="font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
             <Link href="/auth/sign-up">Join now</Link>
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger className="rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none" aria-label="Account menu">
-              <UserAvatar name={DEMO_USER.name} className="size-9" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="font-normal">
-                <p className="text-sm font-semibold">{DEMO_USER.name}</p>
-                <p className="text-xs text-muted-foreground">{DEMO_USER.email}</p>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild><Link href="/library"><LibraryBig /> My library</Link></DropdownMenuItem>
-              <DropdownMenuItem asChild><Link href="/messages"><MessageSquare /> Messages</Link></DropdownMenuItem>
-              <DropdownMenuItem asChild><Link href="/dashboard"><LayoutDashboard /> Trainer dashboard</Link></DropdownMenuItem>
-              <DropdownMenuItem asChild><Link href="/onboarding"><UserRoundCog /> Onboarding</Link></DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild><Link href="/"><LogOut /> Sign out</Link></DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
+          {/* Mobile Sheet Menu */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu"><Menu /></Button>
+              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
+                <Menu className="size-5" />
+              </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <SheetHeader><SheetTitle><Logo /></SheetTitle></SheetHeader>
-              <nav className="flex flex-col gap-1 px-4" aria-label="Mobile">
+            <SheetContent side="right" className="w-72 bg-surface">
+              <SheetHeader>
+                <SheetTitle><Logo /></SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-1 px-4 mt-6" aria-label="Mobile">
                 {LINKS.map((l) => (
-                  <Link key={l.href} href={l.href} className={cn('font-display rounded-lg px-3 py-3 text-3xl', isActive(l.href) ? 'text-lime-ink' : 'text-foreground')}>
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className={cn(
+                      'font-display rounded-lg px-3 py-3 text-2xl uppercase tracking-wide',
+                      isActive(l.href) ? 'text-lime-ink' : 'text-foreground hover:text-lime-ink',
+                    )}
+                  >
                     {l.label}
                   </Link>
                 ))}
-                <Link href="/dashboard" className="font-display rounded-lg px-3 py-3 text-3xl">Dashboard</Link>
               </nav>
-              <div className="mt-auto grid gap-2 p-4">
-                <Button asChild variant="outline"><Link href="/auth/sign-in">Log in</Link></Button>
-                <Button asChild><Link href="/auth/sign-up">Join now</Link></Button>
+              <div className="mt-auto grid gap-2 p-4 border-t border-border">
+                <Button asChild variant="outline">
+                  <Link href="/auth/sign-in">Log in</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/auth/sign-up">Join now</Link>
+                </Button>
               </div>
             </SheetContent>
           </Sheet>
@@ -108,4 +92,3 @@ export function Navbar() {
     </header>
   );
 }
-

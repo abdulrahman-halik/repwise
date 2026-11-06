@@ -87,7 +87,7 @@ export function CallRoomClient({
             position="72% 25%"
             className="size-full object-cover filter brightness-95"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
+          <div className="absolute inset-0 bg-black/25 pointer-events-none" />
 
           {/* Trainer Label Tag */}
           <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-xl bg-black/60 px-3 py-1.5 backdrop-blur-md">
