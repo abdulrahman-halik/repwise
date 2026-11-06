@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useTransition } from 'react';
+import { STORAGE_THEME_KEY } from '@/lib/theme-script';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
@@ -11,8 +12,6 @@ interface ThemeContextValue {
   setTheme: (mode: ThemeMode) => void;
   toggleTheme: () => void;
 }
-
-const STORAGE_THEME_KEY = 'repwise_theme';
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
@@ -32,7 +31,7 @@ function applyThemeClass(resolved: ResolvedTheme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>('system');
+  const [theme, setThemeState] = useState<ThemeMode>('dark');
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>('dark');
   const [, startTransition] = useTransition();
 
@@ -41,7 +40,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     try {
       const stored = localStorage.getItem(STORAGE_THEME_KEY) as ThemeMode | null;
       const initialMode: ThemeMode =
-        stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+        stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'dark';
       
       const resolved = initialMode === 'system' ? getSystemTheme() : initialMode;
 
@@ -49,10 +48,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setResolvedTheme(resolved);
       applyThemeClass(resolved);
     } catch {
-      // Fallback in case localStorage access fails
-      const fallback = getSystemTheme();
-      setResolvedTheme(fallback);
-      applyThemeClass(fallback);
+      // Fallback in case localStorage access fails: dark-first
+      setResolvedTheme('dark');
+      applyThemeClass('dark');
     }
   }, []);
 
