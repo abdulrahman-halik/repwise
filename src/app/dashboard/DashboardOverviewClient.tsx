@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowUpRight,
@@ -34,43 +34,82 @@ export function DashboardOverviewClient({
   initialPrograms?: Program[];
 }) {
   const [sales, setSales] = useState(initialSales);
+  const [sessions, setSessions] = useState(upcomingSessions);
   const [programs] = useState(initialPrograms);
 
   const totalEarningsCents = sales.reduce((acc, curr) => acc + curr.amountCents, 0);
   const totalSalesCount = sales.length;
 
-  const simulateNewSale = () => {
-    const clientsList = ['Alex Rivera', 'Jordan Lee', 'Sam Patel', 'Nora Kim', 'Theo Grant'];
-    const randomName = clientsList[Math.floor(Math.random() * clientsList.length)];
-    const isProgram = Math.random() > 0.4;
-    const amount = isProgram ? 4900 : 8500;
-
-    const newSale: Purchase & { client: Profile; program?: any; slot?: any } = {
-      id: `pu-${Date.now()}`,
-      clientId: `c-demo-${Date.now()}`,
-      trainerId: 't-maya',
-      kind: isProgram ? 'program' : 'session',
-      programId: isProgram ? 'p-strong-base' : null,
-      slotId: isProgram ? null : 's-101',
-      amountCents: amount,
-      stripeSessionId: `cs_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      client: {
-        userId: `c-demo-${Date.now()}`,
-        role: 'client',
-        name: randomName,
-        avatarUrl: null,
-        coverUrl: null,
-        headline: null,
-        bio: null,
-        specialties: null,
-        sessionPriceCents: null,
-      },
-      program: isProgram ? { title: 'Strong Base: 8-Week Barbell' } : undefined,
+  // Poll and listen to live sales and sessions from Neon Postgres & Realtime
+  useEffect(() => {
+    const fetchLatestSales = async () => {
+      try {
+        const res = await fetch('/api/realtime/sales?trainerId=t-maya');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.sales && data.sales.length > 0) {
+            setSales(data.sales);
+          }
+          if (Array.isArray(data.upcomingSessions)) {
+            setSessions(data.upcomingSessions);
+          }
+        }
+      } catch {
+        // quiet error
+      }
     };
 
-    setSales([newSale, ...sales]);
-    toast.success(`⚡ Live Event (Neon Realtime): ${randomName} paid ${formatPrice(amount)}!`);
+    let sse: EventSource | null = null;
+    let bc: BroadcastChannel | null = null;
+
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        bc = new BroadcastChannel('repwise_slots');
+        bc.onmessage = (event) => {
+          if (event.data?.type === 'SLOT_BOOKED') {
+            fetchLatestSales();
+            toast.success('⚡ Live Event: New 1:1 Coaching Session booked!');
+          }
+        };
+      } catch {}
+    }
+
+    try {
+      sse = new EventSource('/api/realtime/slots/stream?trainerId=t-maya');
+      sse.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data);
+          if (data.type === 'SLOT_BOOKED') {
+            fetchLatestSales();
+            toast.success('⚡ Live Event: New 1:1 Coaching Session booked!');
+          }
+        } catch {}
+      };
+    } catch {}
+
+    const interval = setInterval(fetchLatestSales, 5000);
+    return () => {
+      clearInterval(interval);
+      if (sse) sse.close();
+      if (bc) bc.close();
+    };
+  }, []);
+
+  const simulateNewSale = async () => {
+    try {
+      const res = await fetch('/api/simulate-sale', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to simulate');
+
+      const newSale = data.purchase;
+      setSales((prev) => [newSale, ...prev.filter((p) => p.id !== newSale.id)]);
+      toast.success(
+        `⚡ Live Event (Neon Realtime tx: ${data.purchase.txid?.slice(0, 8) || 'committed'}): ${newSale.client.name} paid ${formatPrice(newSale.amountCents)}!`
+      );
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error('Simulation failed');
+    }
   };
 
   return (
@@ -221,8 +260,8 @@ export function DashboardOverviewClient({
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto max-h-[440px] pr-1 scrollbar-thin">
-            {upcomingSessions.length > 0 ? (
-              upcomingSessions.map(({ slot, client }) => {
+            {sessions.length > 0 ? (
+              sessions.map(({ slot, client }) => {
                 const date = new Date(slot.startsAt);
                 return (
                   <div

@@ -38,41 +38,73 @@ export function ProgramsListClient({
   const [level, setLevel] = useState<'Beginner' | 'Intermediate' | 'Advanced'>('Beginner');
   const [weeks, setWeeks] = useState('6');
 
-  const handleCreateProgram = (e: React.FormEvent) => {
+  const handleCreateProgram = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
-    const newProg: Program = {
-      id: `p-${Date.now()}`,
-      trainerId: 't-maya',
-      title: title.trim(),
-      description: description.trim() || 'A structured workout program.',
-      coverUrl: null,
-      priceCents: Math.round(parseFloat(price) * 100),
-      published: true,
-      createdAt: new Date().toISOString(),
-      level,
-      weeks: parseInt(weeks, 10) || 6,
-    };
+    try {
+      const res = await fetch('/api/programs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trainerId: 't-maya',
+          title: title.trim(),
+          description: description.trim() || 'A structured workout program.',
+          priceCents: Math.round(parseFloat(price) * 100),
+          level,
+          weeks: parseInt(weeks, 10) || 6,
+          published: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create');
 
-    setPrograms([newProg, ...programs]);
-    setIsCreateOpen(false);
-    setTitle('');
-    setDescription('');
-    toast.success(`Created program "${newProg.title}"!`);
+      const newProg: Program = data.program || {
+        id: `p-${Date.now()}`,
+        trainerId: 't-maya',
+        title: title.trim(),
+        description: description.trim() || 'A structured workout program.',
+        coverUrl: null,
+        priceCents: Math.round(parseFloat(price) * 100),
+        published: true,
+        createdAt: new Date().toISOString(),
+        level,
+        weeks: parseInt(weeks, 10) || 6,
+      };
+
+      setPrograms([newProg, ...programs]);
+      setIsCreateOpen(false);
+      setTitle('');
+      setDescription('');
+      toast.success(`Created program "${newProg.title}" in Neon DB!`);
+    } catch (err: unknown) {
+      console.error(err);
+      toast.error('Failed to create program in database');
+    }
   };
 
-  const togglePublish = (id: string) => {
-    setPrograms((prev) =>
-      prev.map((p) => {
-        if (p.id === id) {
-          const nextState = !p.published;
-          toast.info(`${p.title} is now ${nextState ? 'Published' : 'Draft'}`);
-          return { ...p, published: nextState };
-        }
-        return p;
-      }),
-    );
+  const togglePublish = async (id: string) => {
+    try {
+      const res = await fetch('/api/programs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ programId: id }),
+      });
+      const data = await res.json();
+
+      setPrograms((prev) =>
+        prev.map((p) => {
+          if (p.id === id) {
+            const nextState = data.program ? data.program.published : !p.published;
+            toast.info(`${p.title} is now ${nextState ? 'Published' : 'Draft'}`);
+            return { ...p, published: nextState };
+          }
+          return p;
+        }),
+      );
+    } catch {
+      toast.error('Failed to toggle publish status');
+    }
   };
 
   return (
