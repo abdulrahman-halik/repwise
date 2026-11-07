@@ -53,6 +53,15 @@ export async function getDbSlots(trainerId: string) {
     .orderBy(slots.startsAt);
 }
 
+export async function getDbSlotById(slotId: string) {
+  const [slot] = await db
+    .select()
+    .from(slots)
+    .where(eq(slots.id, slotId))
+    .limit(1);
+  return slot || null;
+}
+
 export async function getDbOpenSlots(trainerId: string) {
   return await db
     .select()
@@ -99,23 +108,64 @@ export async function getDbTrainerSales(trainerId: string) {
 export async function bookSlotInDb(params: {
   slotId: string;
   clientId: string;
+  clientName?: string | null;
+  clientAvatar?: string | null;
   trainerId: string;
   amountCents: number;
 }) {
   const purchaseId = `pu-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
   const stripeSessionId = `mock_session_${Date.now()}`;
 
-  // 1. Mark slot booked
-  await db
+  // 1. Ensure client profile exists in Neon DB so foreign keys don't fail
+  const [existingProfile] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.userId, params.clientId))
+    .limit(1);
+
+  if (!existingProfile) {
+    await db
+      .insert(profiles)
+      .values({
+        userId: params.clientId,
+        name: params.clientName || 'Athlete',
+        role: 'client',
+        avatarUrl: params.clientAvatar || null,
+      })
+      .onConflictDoNothing();
+  }
+
+  // 2. Verify slot exists and check current availability
+  const [targetSlot] = await db
+    .select()
+    .from(slots)
+    .where(eq(slots.id, params.slotId))
+    .limit(1);
+
+  if (!targetSlot) {
+    throw new Error('Coaching slot not found in database.');
+  }
+
+  if (targetSlot.status === 'booked') {
+    throw new Error('This slot has already been booked by another athlete.');
+  }
+
+  // 3. Atomically mark slot booked ONLY if it is still open
+  const [updatedSlot] = await db
     .update(slots)
     .set({
       status: 'booked',
       clientId: params.clientId,
       heldUntil: null,
     })
-    .where(eq(slots.id, params.slotId));
+    .where(and(eq(slots.id, params.slotId), eq(slots.status, 'open')))
+    .returning();
 
-  // 2. Insert purchase record
+  if (!updatedSlot) {
+    throw new Error('This slot is no longer available. Please select another time.');
+  }
+
+  // 4. Insert purchase record
   const [newPurchase] = await db
     .insert(purchases)
     .values({
@@ -129,7 +179,7 @@ export async function bookSlotInDb(params: {
     })
     .returning();
 
-  return newPurchase;
+  return { purchase: newPurchase, slot: updatedSlot };
 }
 
 export async function purchaseProgramInDb(params: {

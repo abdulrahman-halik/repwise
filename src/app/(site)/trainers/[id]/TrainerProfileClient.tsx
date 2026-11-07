@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { formatPrice } from '@/lib/format';
 import type { Profile, Program, Review, Slot } from '@/lib/types';
+import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import { toast } from 'sonner';
 
 export function TrainerProfileClient({
@@ -45,10 +46,17 @@ export function TrainerProfileClient({
   reviews: (Review & { client?: Profile })[];
   rating: { avg: number; count: number };
 }) {
+  const {
+    slots: currentSlots,
+    notifySlotChange,
+    isLive,
+  } = useRealtimeSlots(trainer.userId, slots);
+
   const [activeTab, setActiveTab] = useState<'programs' | 'slots' | 'reviews'>('programs');
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Review modal state
   const [isReviewOpen, setIsReviewOpen] = useState(false);
@@ -63,7 +71,8 @@ export function TrainerProfileClient({
   };
 
   const handleConfirmBooking = async () => {
-    if (!selectedSlot) return;
+    if (!selectedSlot || isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
@@ -77,11 +86,20 @@ export function TrainerProfileClient({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to book');
 
+      // Optimistically update slots and broadcast to other tabs
+      notifySlotChange({
+        type: 'SLOT_BOOKED',
+        slotId: selectedSlot.id,
+        clientId: 'c-alex',
+      });
+
       setBookingSuccess(true);
       toast.success('Session booked successfully in Neon database! Added to your Library.');
     } catch (err: unknown) {
       console.error(err);
       toast.error(err instanceof Error ? err.message : 'Booking failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -201,11 +219,19 @@ export function TrainerProfileClient({
 
             <div className="flex flex-col gap-2.5">
               <Button
-                onClick={() => setActiveTab('slots')}
+                onClick={() => {
+                  const firstOpen = currentSlots.find((s) => s.status === 'open');
+                  if (firstOpen) {
+                    handleBookSlot(firstOpen);
+                  } else {
+                    setActiveTab('slots');
+                    toast.info('All 1:1 sessions are currently booked for this coach.');
+                  }
+                }}
                 size="lg"
                 className="w-full font-semibold"
               >
-                <Calendar className="size-4" /> Book 1:1 Session
+                <Calendar className="size-4" /> Book Session
               </Button>
               <Button asChild variant="outline" size="lg" className="w-full">
                 <Link href="/messages">
@@ -221,31 +247,28 @@ export function TrainerProfileClient({
       <div className="mt-12 flex border-b border-border">
         <button
           onClick={() => setActiveTab('programs')}
-          className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-semibold uppercase tracking-wider transition-colors ${
-            activeTab === 'programs'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+          className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-semibold uppercase tracking-wider transition-colors ${activeTab === 'programs'
+            ? 'border-primary text-primary'
+            : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
         >
           <Dumbbell className="size-4" /> Programs ({programs.length})
         </button>
         <button
           onClick={() => setActiveTab('slots')}
-          className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-semibold uppercase tracking-wider transition-colors ${
-            activeTab === 'slots'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+          className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-semibold uppercase tracking-wider transition-colors ${activeTab === 'slots'
+            ? 'border-primary text-primary'
+            : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
         >
-          <Calendar className="size-4" /> Book Live 1:1 ({slots.filter((s) => s.status === 'open').length} open)
+          <Calendar className="size-4" /> Book Live 1:1 ({currentSlots.filter((s) => s.status === 'open').length} open)
         </button>
         <button
           onClick={() => setActiveTab('reviews')}
-          className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-semibold uppercase tracking-wider transition-colors ${
-            activeTab === 'reviews'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
+          className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-semibold uppercase tracking-wider transition-colors ${activeTab === 'reviews'
+            ? 'border-primary text-primary'
+            : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
         >
           <Star className="size-4" /> Reviews ({allReviews.length})
         </button>
@@ -280,13 +303,19 @@ export function TrainerProfileClient({
                 60-minute private video call over Stream. Pick an open slot to hold and book.
               </p>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs text-muted-foreground">
-              <Clock className="size-3.5 text-lime-ink" /> Shown in your local time zone
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs text-muted-foreground">
+                <Clock className="size-3.5 text-lime-ink" /> Shown in your local time zone
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
+                <span className="size-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]" />
+                Live Real-Time Sync
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {slots.map((slot) => {
+            {currentSlots.map((slot) => {
               const date = new Date(slot.startsAt);
               const formattedDate = date.toLocaleDateString(undefined, {
                 weekday: 'short',
@@ -305,11 +334,10 @@ export function TrainerProfileClient({
               return (
                 <div
                   key={slot.id}
-                  className={`flex flex-col justify-between rounded-2xl border p-5 transition-all ${
-                    isOpen
-                      ? 'border-border bg-surface hover:border-primary/60'
-                      : 'border-border/40 bg-surface/30 opacity-60'
-                  }`}
+                  className={`flex flex-col justify-between rounded-2xl border p-5 transition-all ${isOpen
+                    ? 'border-border bg-surface hover:border-primary/60'
+                    : 'border-border/40 bg-surface/30 opacity-60'
+                    }`}
                 >
                   <div>
                     <div className="flex items-center justify-between">
@@ -466,6 +494,19 @@ export function TrainerProfileClient({
                 </div>
               </div>
 
+              {selectedSlot && (() => {
+                const liveSlot = currentSlots.find((s) => s.id === selectedSlot.id);
+                const isUnavailable = liveSlot && liveSlot.status !== 'open';
+                if (isUnavailable) {
+                  return (
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                      ⚠️ This slot was just booked by another athlete in real time. Please select another open time.
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               <p className="text-xs text-muted-foreground">
                 * Simulated Stripe payment checkout. No real card charge will be made in demo mode.
               </p>
@@ -481,10 +522,17 @@ export function TrainerProfileClient({
                 </Button>
                 <Button
                   type="button"
+                  disabled={
+                    isSubmitting ||
+                    Boolean(
+                      selectedSlot &&
+                        currentSlots.find((s) => s.id === selectedSlot.id)?.status !== 'open'
+                    )
+                  }
                   onClick={handleConfirmBooking}
                   className="flex-1 font-semibold"
                 >
-                  Pay & Confirm
+                  {isSubmitting ? 'Confirming...' : 'Pay & Confirm'}
                 </Button>
               </DialogFooter>
             </div>
@@ -518,11 +566,10 @@ export function TrainerProfileClient({
                     className="p-1 transition-transform hover:scale-110 focus:outline-none"
                   >
                     <Star
-                      className={`size-7 ${
-                        star <= reviewRating
-                          ? 'fill-primary text-primary'
-                          : 'fill-transparent text-muted-foreground/40'
-                      }`}
+                      className={`size-7 ${star <= reviewRating
+                        ? 'fill-primary text-primary'
+                        : 'fill-transparent text-muted-foreground/40'
+                        }`}
                     />
                   </button>
                 ))}

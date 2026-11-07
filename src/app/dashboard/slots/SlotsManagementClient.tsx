@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { Profile, Slot } from '@/lib/types';
+import { useRealtimeSlots } from '@/hooks/useRealtimeSlots';
 import { toast } from 'sonner';
 
 export function SlotsManagementClient({
@@ -31,7 +32,13 @@ export function SlotsManagementClient({
   initialSlots: Slot[];
   clients: Profile[];
 }) {
-  const [slots, setSlots] = useState(initialSlots);
+  const {
+    slots,
+    setSlots,
+    notifySlotChange,
+    isLive,
+  } = useRealtimeSlots('t-maya', initialSlots);
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [datetime, setDatetime] = useState('');
   const [filter, setFilter] = useState<'all' | 'open' | 'held' | 'booked'>('all');
@@ -61,7 +68,7 @@ export function SlotsManagementClient({
         heldUntil: null,
       };
 
-      setSlots([newSlot, ...slots]);
+      notifySlotChange({ type: 'SLOT_CREATED', slot: newSlot });
       setIsAddOpen(false);
       setDatetime('');
       toast.success('Open 60-minute coaching slot added to Neon DB!');
@@ -73,8 +80,8 @@ export function SlotsManagementClient({
 
   const handleDeleteSlot = async (id: string) => {
     try {
-      await fetch(`/api/slots?id=${id}`, { method: 'DELETE' });
-      setSlots((prev) => prev.filter((s) => s.id !== id));
+      await fetch(`/api/slots?id=${id}&trainerId=t-maya`, { method: 'DELETE' });
+      notifySlotChange({ type: 'SLOT_DELETED', slotId: id });
       toast.info('Slot removed from Neon DB.');
     } catch (err: unknown) {
       toast.error('Failed to remove slot');
@@ -91,7 +98,13 @@ export function SlotsManagementClient({
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <span className="eyebrow">Availability & Schedule</span>
+          <div className="flex items-center gap-2">
+            <span className="eyebrow">Availability & Schedule</span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
+              <span className="size-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]" />
+              Live Sync
+            </span>
+          </div>
           <h1 className="font-display mt-1 text-4xl uppercase md:text-5xl">1:1 Coaching Slots</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Post 60-minute available times for clients to hold and book through Stripe Checkout.

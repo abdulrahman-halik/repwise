@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db, purchases, profiles, programs, slots } from '@/lib/db';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { realtime, rawSql } from '@/lib/realtime';
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +52,41 @@ export async function GET(req: Request) {
       program: s.programTitle ? { title: s.programTitle } : undefined,
     }));
 
-    // 2. Generate a sealed query for Neon Realtime subscription
+    // 2. Fetch live upcoming booked sessions from Neon Postgres
+    const rawBookedSlots = await db
+      .select({
+        id: slots.id,
+        trainerId: slots.trainerId,
+        startsAt: slots.startsAt,
+        status: slots.status,
+        clientId: slots.clientId,
+        heldUntil: slots.heldUntil,
+        clientName: profiles.name,
+        clientAvatar: profiles.avatarUrl,
+      })
+      .from(slots)
+      .leftJoin(profiles, eq(slots.clientId, profiles.userId))
+      .where(and(eq(slots.trainerId, trainerId), eq(slots.status, 'booked')))
+      .orderBy(slots.startsAt);
+
+    const upcomingSessions = rawBookedSlots.map((s) => ({
+      slot: {
+        id: s.id,
+        trainerId: s.trainerId,
+        startsAt: s.startsAt.toISOString(),
+        status: s.status as any,
+        clientId: s.clientId,
+        heldUntil: s.heldUntil ? s.heldUntil.toISOString() : null,
+      },
+      client: {
+        userId: s.clientId || 'athlete',
+        name: s.clientName || 'Athlete',
+        avatarUrl: s.clientAvatar,
+        role: 'client' as const,
+      },
+    }));
+
+    // 3. Generate a sealed query for Neon Realtime subscription
     let sealedQuery: any = null;
     try {
       sealedQuery = await realtime.seal({
@@ -67,6 +101,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       sales: formattedSales,
+      upcomingSessions,
       sealedQuery,
     });
   } catch (error: unknown) {
@@ -74,4 +109,3 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Failed to fetch sales' }, { status: 500 });
   }
 }
-

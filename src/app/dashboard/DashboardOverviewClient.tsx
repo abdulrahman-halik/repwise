@@ -34,12 +34,13 @@ export function DashboardOverviewClient({
   initialPrograms?: Program[];
 }) {
   const [sales, setSales] = useState(initialSales);
+  const [sessions, setSessions] = useState(upcomingSessions);
   const [programs] = useState(initialPrograms);
 
   const totalEarningsCents = sales.reduce((acc, curr) => acc + curr.amountCents, 0);
   const totalSalesCount = sales.length;
 
-  // Poll live sales from Neon Postgres & Realtime
+  // Poll and listen to live sales and sessions from Neon Postgres & Realtime
   useEffect(() => {
     const fetchLatestSales = async () => {
       try {
@@ -49,14 +50,49 @@ export function DashboardOverviewClient({
           if (data.sales && data.sales.length > 0) {
             setSales(data.sales);
           }
+          if (Array.isArray(data.upcomingSessions)) {
+            setSessions(data.upcomingSessions);
+          }
         }
-      } catch (err) {
+      } catch {
         // quiet error
       }
     };
 
-    const interval = setInterval(fetchLatestSales, 10000);
-    return () => clearInterval(interval);
+    let sse: EventSource | null = null;
+    let bc: BroadcastChannel | null = null;
+
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        bc = new BroadcastChannel('repwise_slots');
+        bc.onmessage = (event) => {
+          if (event.data?.type === 'SLOT_BOOKED') {
+            fetchLatestSales();
+            toast.success('⚡ Live Event: New 1:1 Coaching Session booked!');
+          }
+        };
+      } catch {}
+    }
+
+    try {
+      sse = new EventSource('/api/realtime/slots/stream?trainerId=t-maya');
+      sse.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data);
+          if (data.type === 'SLOT_BOOKED') {
+            fetchLatestSales();
+            toast.success('⚡ Live Event: New 1:1 Coaching Session booked!');
+          }
+        } catch {}
+      };
+    } catch {}
+
+    const interval = setInterval(fetchLatestSales, 5000);
+    return () => {
+      clearInterval(interval);
+      if (sse) sse.close();
+      if (bc) bc.close();
+    };
   }, []);
 
   const simulateNewSale = async () => {
@@ -224,8 +260,8 @@ export function DashboardOverviewClient({
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto max-h-[440px] pr-1 scrollbar-thin">
-            {upcomingSessions.length > 0 ? (
-              upcomingSessions.map(({ slot, client }) => {
+            {sessions.length > 0 ? (
+              sessions.map(({ slot, client }) => {
                 const date = new Date(slot.startsAt);
                 return (
                   <div

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Calendar,
@@ -28,6 +28,60 @@ export function LibraryClient({
   purchases: Purchase[];
 }) {
   const [activeTab, setActiveTab] = useState<'programs' | 'sessions' | 'receipts'>('programs');
+  const [clientSessions, setClientSessions] = useState(sessions);
+
+  const refreshSessions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/bookings');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.sessions)) {
+          setClientSessions(data.sessions);
+        }
+      }
+    } catch {
+      // quiet fallback
+    }
+  }, []);
+
+  useEffect(() => {
+    let bc: BroadcastChannel | null = null;
+    let sse: EventSource | null = null;
+
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        bc = new BroadcastChannel('repwise_slots');
+        bc.onmessage = (event) => {
+          if (event.data?.type === 'SLOT_BOOKED') {
+            refreshSessions();
+          }
+        };
+      } catch {}
+    }
+
+    try {
+      sse = new EventSource('/api/realtime/slots/stream');
+      sse.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data);
+          if (data.type === 'SLOT_BOOKED') {
+            refreshSessions();
+          }
+        } catch {}
+      };
+    } catch {}
+
+    const interval = setInterval(refreshSessions, 5000);
+    const handleFocus = () => refreshSessions();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      if (bc) bc.close();
+      if (sse) sse.close();
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [refreshSessions]);
 
   return (
     <div className="container-page py-10 md:py-16">
@@ -62,7 +116,7 @@ export function LibraryClient({
               : 'border-transparent text-muted-foreground hover:text-foreground'
           }`}
         >
-          <Video className="size-4" /> Upcoming 1:1 Sessions ({sessions.length})
+          <Video className="size-4" /> Upcoming 1:1 Sessions ({clientSessions.length})
         </button>
         <button
           onClick={() => setActiveTab('receipts')}
@@ -146,9 +200,9 @@ export function LibraryClient({
       {/* Tab 2: Booked Live Sessions */}
       {activeTab === 'sessions' && (
         <div>
-          {sessions.length > 0 ? (
+          {clientSessions.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {sessions.map(({ slot, trainer }) => {
+              {clientSessions.map(({ slot, trainer }) => {
                 const date = new Date(slot.startsAt);
                 return (
                   <div
