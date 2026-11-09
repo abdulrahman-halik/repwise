@@ -175,3 +175,69 @@
   background: var(--border);
   border-radius: 9999px;
 }
+
+/* Stream Chat v15 & Stream Video v1 Repwise Theme Integration */
+.repwise-stream-shell .str-chat {
+  --str-chat__font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --str-chat__border-radius-circle: 9999px;
+  height: 100%;
+  width: 100%;
+}
+
+.repwise-stream-shell .str-chat.messaging.light {
+  --str-chat__primary-color: #4f7a00;
+  --str-chat__active-primary-color: #3d5e00;
+  --str-chat__On-primary-color: #ffffff;
+  --str-chat__background-color: #ffffff;
+  --str-chat__secondary-background-color: #f5f6f1;
+  --str-chat__primary-surface-color: #eef0e9;
+  --str-chat__primary-surface-color-low-emphasis: #f5f6f1;
+  --str-chat__text-color: #0b0f0c;
+  --str-chat__text-low-emphasis-color: #5d665f;
+  --str-chat__disabled-color: #d9ddd3;
+  --str-chat__own-message-bubble-background-color: #c6ff3d;
+  --str-chat__own-message-bubble-color: #0a0d0b;
+  --str-chat__other-message-bubble-background-color: #eef0e9;
+  --str-chat__other-message-bubble-color: #0b0f0c;
+  --str-chat__surface-color: #e1e4dc;
+  --str-chat__secondary-surface-color: #eceee7;
+}
+
+.repwise-stream-shell .str-chat.str-chat__theme-dark {
+  --str-chat__primary-color: #c6ff3d;
+  --str-chat__active-primary-color: #b2ec28;
+  --str-chat__On-primary-color: #0a0d0b;
+  --str-chat__background-color: #111512;
+  --str-chat__secondary-background-color: #0a0d0b;
+  --str-chat__primary-surface-color: #171c18;
+  --str-chat__primary-surface-color-low-emphasis: #141915;
+  --str-chat__text-color: #f1f4ef;
+  --str-chat__text-low-emphasis-color: #8e978f;
+  --str-chat__disabled-color: #232a25;
+  --str-chat__own-message-bubble-background-color: #c6ff3d;
+  --str-chat__own-message-bubble-color: #0a0d0b;
+  --str-chat__other-message-bubble-background-color: #171c18;
+  --str-chat__other-message-bubble-color: #f1f4ef;
+  --str-chat__surface-color: #232a25;
+  --str-chat__secondary-surface-color: #1b211d;
+}
+
+/* Keep markdown inside own electric-lime message bubbles dark and readable */
+.repwise-stream-shell .str-chat__message--me .str-chat__message-bubble,
+.repwise-stream-shell .str-chat__message--me .str-chat__message-bubble p,
+.repwise-stream-shell .str-chat__message--me .str-chat__message-bubble strong,
+.repwise-stream-shell .str-chat__message--me .str-chat__message-bubble li {
+  color: #0a0d0b;
+}
+
+.repwise-stream-shell .str-chat__workspace-layout {
+  height: 100%;
+}
+
+.str-video {
+  --str-video__primary-color: #c6ff3d;
+  --str-video__secondary-color: #171c18;
+  --str-video__background-color0: #0a0d0b;
+  --str-video__background-color1: #111512;
+  --str-video__background-color2: #171c18;
+}

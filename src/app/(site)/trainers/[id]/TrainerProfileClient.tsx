@@ -234,7 +234,7 @@ export function TrainerProfileClient({
                 <Calendar className="size-4" /> Book Session
               </Button>
               <Button asChild variant="outline" size="lg" className="w-full">
-                <Link href="/messages">
+                <Link href={`/messages?partner=${trainer.userId}`}>
                   <MessageSquare className="size-4" /> Message Coach
                 </Link>
               </Button>
