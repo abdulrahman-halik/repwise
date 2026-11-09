@@ -1,324 +1,307 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Calendar,
-  CheckCheck,
-  Flame,
-  MessageSquare,
-  Paperclip,
-  Phone,
-  Search,
-  Send,
-  Smile,
-  ThumbsUp,
+  LogOut,
+  MessageSquarePlus,
+  Radio,
+  Sparkles,
+  UserPlus,
   Video,
 } from 'lucide-react';
+import {
+  ChannelPaginator,
+  type Channel as StreamChannel,
+  type Thread as StreamThread,
+} from 'stream-chat';
+import {
+  ChannelHeader,
+  ChannelNavigation,
+  Chat,
+  MessageComposer,
+  MessageList,
+  ThreadHeader,
+  ThreadList,
+  useWorkspaceNavigation,
+} from 'stream-chat-react';
+import {
+  ChannelSlot,
+  ChatView,
+  ChatViewEmptyPlaceholder,
+  DisposedChannelRelease,
+  type LayoutDescriptor,
+  ThreadSlot,
+  useActiveThread,
+  useSlotThread,
+} from 'stream-chat-react/slot-layout';
+import { StreamLoginCard } from '@/components/stream/StreamLoginCard';
 import { UserAvatar } from '@/components/site/UserAvatar';
 import { Button } from '@/components/ui/button';
-import type { Conversation, Profile } from '@/lib/types';
+import { useStreamContext } from '@/context/StreamContext';
+import { useTheme } from '@/context/ThemeContext';
+import type { Profile } from '@/lib/types';
+import { toast } from 'sonner';
+
+const CHAT_VIEW_LAYOUTS: LayoutDescriptor[] = [
+  {
+    id: 'channels',
+    slots: ['channel', 'thread'],
+  },
+  {
+    id: 'threads',
+    slots: ['thread'],
+  },
+];
+
+function ActiveThreadBinder() {
+  const activeThread = useSlotThread({ slot: 'thread' });
+  useActiveThread({ activeThread });
+  return null;
+}
+
+function WorkspacePartnerOpener({
+  requestedPartner,
+  onOpened,
+}: {
+  requestedPartner: { userId: string; name?: string } | null;
+  onOpened: () => void;
+}) {
+  const { chatClient, streamUser } = useStreamContext();
+  const { openChannel } = useWorkspaceNavigation();
+  const inFlightRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!requestedPartner || !chatClient || !streamUser) return;
+    if (requestedPartner.userId === streamUser.id) {
+      onOpened();
+      return;
+    }
+
+    const requestKey = `${streamUser.id}:${requestedPartner.userId}`;
+    if (inFlightRef.current === requestKey) return;
+    inFlightRef.current = requestKey;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/stream/channel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentUserId: streamUser.id,
+            targetUserId: requestedPartner.userId,
+            targetName: requestedPartner.name,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.channelId) {
+          throw new Error(data.error || 'Could not open direct message channel');
+        }
+        if (cancelled) return;
+
+        const channel: StreamChannel = chatClient.channel('messaging', data.channelId);
+        await channel.watch();
+        if (cancelled) return;
+
+        chatClient.channelManager.ingestChannel(channel);
+        openChannel(channel);
+        onOpened();
+      } catch (err: unknown) {
+        if (!cancelled) {
+          toast.error(err instanceof Error ? err.message : 'Failed to start conversation');
+          onOpened();
+        }
+      } finally {
+        inFlightRef.current = null;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [requestedPartner, chatClient, streamUser, openChannel, onOpened]);
+
+  return null;
+}
 
 export function MessagesClient({
-  initialConversations,
   trainers,
+  clients,
 }: {
-  initialConversations: Conversation[];
   trainers: Profile[];
+  clients: Profile[];
 }) {
-  const [conversations, setConversations] = useState(initialConversations);
-  const [activeChatId, setActiveChatId] = useState(initialConversations[0]?.id || 'ch-maya');
-  const [inputText, setInputText] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { streamUser, chatClient, isConnecting, logoutStreamUser } = useStreamContext();
+  const { theme } = useTheme();
+  const [requestedPartner, setRequestedPartner] = useState<{
+    userId: string;
+    name?: string;
+  } | null>(null);
+  const [paginatorReady, setPaginatorReady] = useState(false);
 
-  const activeChat = conversations.find((c) => c.id === activeChatId) || conversations[0];
-  const otherMemberId = activeChat?.memberIds.find((id) => id !== 'c-alex') || 't-maya';
-  const otherTrainer = trainers.find((t) => t.userId === otherMemberId) || trainers[0];
+  // Detect ?partner=<userId> on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const partnerId = params.get('partner');
+    if (partnerId) {
+      const profile = [...trainers, ...clients].find((p) => p.userId === partnerId);
+      setRequestedPartner({ userId: partnerId, name: profile?.name });
+    }
+  }, [trainers, clients]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim()) return;
+  // Register ChannelPaginator for the logged-in user on chatClient.channelManager
+  useEffect(() => {
+    if (!chatClient || !streamUser) {
+      setPaginatorReady(false);
+      return;
+    }
 
-    const newMessage = {
-      id: `m-${Date.now()}`,
-      authorId: 'c-alex',
-      text: inputText.trim(),
-      sentAt: new Date().toISOString(),
-    };
+    const paginator = new ChannelPaginator({
+      client: chatClient,
+      id: `messaging-${streamUser.id}`,
+      filters: {
+        type: 'messaging',
+        members: { $in: [streamUser.id] },
+      },
+      sort: [{ field: 'last_message_at', direction: -1 }],
+      requestOptions: { state: true, watch: true, presence: true },
+    });
 
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id === activeChat.id) {
-          return {
-            ...c,
-            messages: [...c.messages, newMessage],
-          };
-        }
-        return c;
-      }),
+    chatClient.channelManager.insertPaginator({ paginator });
+    setPaginatorReady(true);
+  }, [chatClient, streamUser]);
+
+  const handleClearPartnerRequest = useCallback(() => {
+    setRequestedPartner(null);
+  }, []);
+
+  if (!streamUser || !chatClient) {
+    return (
+      <StreamLoginCard
+        title="Direct Messages · Stream Chat"
+        subtitle="Sign in with a Repwise profile or your Neon Auth account to message coaches in real time, react with emojis, quote replies, and branch into threads."
+      />
     );
-    setInputText('');
-  };
+  }
 
-  const handleAddReaction = (messageId: string, emoji: string) => {
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id === activeChat.id) {
-          return {
-            ...c,
-            messages: c.messages.map((m) => {
-              if (m.id === messageId) {
-                const currentReactions = m.reactions || [];
-                const existing = currentReactions.find((r) => r.emoji === emoji);
-                if (existing) {
-                  return {
-                    ...m,
-                    reactions: currentReactions.map((r) =>
-                      r.emoji === emoji ? { ...r, count: r.count + 1 } : r,
-                    ),
-                  };
-                } else {
-                  return {
-                    ...m,
-                    reactions: [...currentReactions, { emoji, count: 1 }],
-                  };
-                }
-              }
-              return m;
-            }),
-          };
-        }
-        return c;
-      }),
-    );
-  };
+  // Contacts the current user can start/open a 1:1 DM with
+  const availableContacts =
+    streamUser.role === 'trainer'
+      ? [...clients, ...trainers.filter((t) => t.userId !== streamUser.id)]
+      : [...trainers, ...clients.filter((c) => c.userId !== streamUser.id)];
 
   return (
-    <div className="container-page py-6 md:py-10">
-      <div className="overflow-hidden rounded-3xl border border-border bg-surface shadow-2xl">
-        <div className="grid h-[700px] grid-cols-1 md:grid-cols-[320px_1fr] lg:grid-cols-[360px_1fr]">
-          {/* Sidebar: Conversation List */}
-          <div className="flex flex-col border-r border-border bg-surface-2/40">
-            {/* Header & Search */}
-            <div className="border-b border-border p-4">
-              <div className="flex items-center justify-between">
-                <h2 className="font-display text-2xl uppercase tracking-wide">Direct Messages</h2>
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-lime-ink">
-                  Stream Chat
-                </span>
-              </div>
-              <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search trainers..."
-                  className="h-9 w-full rounded-xl border border-border bg-surface pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
-                />
-              </div>
+    <div className="container-page py-6 md:py-8">
+      {/* Top Repwise Workspace Control Bar */}
+      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 shadow-lg lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="relative">
+              <UserAvatar name={streamUser.name} className="size-9" />
+              <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-surface bg-primary" />
             </div>
-
-            {/* Conversation Threads */}
-            <div className="flex-1 overflow-y-auto divide-y divide-border/40">
-              {conversations
-                .filter((conv) => {
-                  const partnerId = conv.memberIds.find((id) => id !== 'c-alex');
-                  const coach = trainers.find((t) => t.userId === partnerId);
-                  return !searchQuery || coach?.name.toLowerCase().includes(searchQuery.toLowerCase());
-                })
-                .map((conv) => {
-                  const partnerId = conv.memberIds.find((id) => id !== 'c-alex');
-                  const coach = trainers.find((t) => t.userId === partnerId) || trainers[0];
-                  const lastMessage = conv.messages[conv.messages.length - 1];
-                  const isActive = conv.id === activeChat.id;
-
-                  return (
-                    <button
-                      key={conv.id}
-                      onClick={() => setActiveChatId(conv.id)}
-                      className={`flex w-full items-start gap-3 p-4 text-left transition-colors ${
-                        isActive ? 'bg-surface-2' : 'hover:bg-surface-2/50'
-                      }`}
-                    >
-                      <div className="relative">
-                        <UserAvatar name={coach.name} className="size-11" />
-                        <span className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-surface bg-primary" />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h4 className="truncate text-sm font-semibold text-foreground">
-                            {coach.name}
-                          </h4>
-                          {lastMessage && (
-                            <span className="text-[10px] text-muted-foreground">
-                              {new Date(lastMessage.sentAt).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-1 truncate text-xs text-muted-foreground">
-                          {lastMessage ? lastMessage.text : 'Start conversation...'}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-            </div>
-          </div>
-
-          {/* Main Chat Pane */}
-          <div className="flex flex-col bg-surface">
-            {/* Chat Header */}
-            <div className="flex items-center justify-between border-b border-border p-4">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <UserAvatar name={otherTrainer.name} className="size-10" />
-                  <span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{otherTrainer.name}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {otherTrainer.headline} · <span className="text-lime-ink">Active now</span>
-                  </p>
-                </div>
-              </div>
-
+            <div>
               <div className="flex items-center gap-2">
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/trainers/${otherTrainer.userId}`}>
-                    <Calendar className="size-3.5" /> Book 1:1
-                  </Link>
-                </Button>
-                <Button asChild size="sm">
-                  <Link href="/call/s-101">
-                    <Video className="size-3.5" /> Join Room
-                  </Link>
-                </Button>
-              </div>
-            </div>
-
-            {/* Messages Thread Container */}
-            <div className="flex-1 space-y-4 overflow-y-auto p-5">
-              <div className="my-2 text-center">
-                <span className="rounded-full bg-surface-2 px-3 py-1 text-[11px] text-muted-foreground">
-                  Today · Direct end-to-end messaging powered by Stream
+                <span className="text-sm font-semibold text-foreground">{streamUser.name}</span>
+                <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-lime-ink">
+                  {streamUser.role === 'trainer' ? 'Coach' : 'Athlete'} · {streamUser.id}
                 </span>
               </div>
-
-              {activeChat.messages.map((msg) => {
-                const isMe = msg.authorId === 'c-alex';
-
-                return (
-                  <div
-                    key={msg.id}
-                    className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                  >
-                    <div className="flex max-w-[80%] items-end gap-2">
-                      {!isMe && <UserAvatar name={otherTrainer.name} className="size-7 shrink-0" />}
-
-                      <div
-                        className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                          isMe
-                            ? 'bg-primary text-primary-foreground font-medium rounded-br-none'
-                            : 'bg-surface-2 border border-border text-foreground rounded-bl-none'
-                        }`}
-                      >
-                        <p>{msg.text}</p>
-
-                        <div
-                          className={`mt-1.5 flex items-center justify-end gap-1 text-[10px] ${
-                            isMe ? 'text-primary-foreground/75' : 'text-muted-foreground'
-                          }`}
-                        >
-                          <span>
-                            {new Date(msg.sentAt).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                          {isMe && <CheckCheck className="size-3" />}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Reactions & quick emoji toolbar */}
-                    <div className="mt-1 flex items-center gap-1.5 px-2">
-                      {msg.reactions?.map((r) => (
-                        <span
-                          key={r.emoji}
-                          className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-2 px-2 py-0.5 text-xs"
-                        >
-                          {r.emoji} {r.count}
-                        </span>
-                      ))}
-                      <div className="opacity-0 transition-opacity hover:opacity-100 flex items-center gap-1">
-                        <button
-                          onClick={() => handleAddReaction(msg.id, '🔥')}
-                          className="rounded-full p-1 text-xs hover:bg-surface-2"
-                          title="React with fire"
-                        >
-                          🔥
-                        </button>
-                        <button
-                          onClick={() => handleAddReaction(msg.id, '💪')}
-                          className="rounded-full p-1 text-xs hover:bg-surface-2"
-                          title="React with muscle"
-                        >
-                          💪
-                        </button>
-                        <button
-                          onClick={() => handleAddReaction(msg.id, '👍')}
-                          className="rounded-full p-1 text-xs hover:bg-surface-2"
-                          title="React with thumbs up"
-                        >
-                          👍
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Radio className="size-3 text-lime-ink" /> Connected to Stream Chat v15
+              </p>
             </div>
-
-            {/* Input Bar */}
-            <form onSubmit={handleSendMessage} className="border-t border-border p-3 sm:p-4">
-              <div className="flex items-center gap-2 rounded-2xl border border-border bg-surface-2/60 p-2">
-                <button
-                  type="button"
-                  className="rounded-xl p-2 text-muted-foreground hover:bg-surface hover:text-foreground"
-                >
-                  <Paperclip className="size-4" />
-                </button>
-
-                <input
-                  type="text"
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  placeholder={`Message ${otherTrainer.name}...`}
-                  className="flex-1 bg-transparent px-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setInputText((prev) => prev + ' 💪')}
-                  className="rounded-xl p-2 text-muted-foreground hover:bg-surface hover:text-foreground"
-                >
-                  <Smile className="size-4" />
-                </button>
-
-                <Button type="submit" size="sm" className="font-semibold">
-                  <Send className="size-4" /> Send
-                </Button>
-              </div>
-            </form>
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={logoutStreamUser}
+            data-testid="stream-switch-user"
+            className="text-xs"
+          >
+            <LogOut className="size-3.5" /> Switch User
+          </Button>
         </div>
+
+        {/* Quick Start / Open DM Contacts */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <MessageSquarePlus className="size-3.5 text-lime-ink" /> Message:
+          </span>
+          {availableContacts.slice(0, 5).map((contact) => (
+            <button
+              key={contact.userId}
+              type="button"
+              disabled={isConnecting}
+              data-testid={`open-dm-${contact.userId}`}
+              onClick={() =>
+                setRequestedPartner({
+                  userId: contact.userId,
+                  name: contact.name,
+                })
+              }
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/60 hover:bg-primary/10"
+            >
+              <UserAvatar name={contact.name} className="size-5" />
+              <span>{contact.name}</span>
+            </button>
+          ))}
+
+          <Button asChild size="sm" className="ml-auto font-semibold lg:ml-2">
+            <Link href="/call/s-101" data-testid="goto-video-room">
+              <Video className="size-3.5" /> 1:1 Video Room
+            </Link>
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Stream Chat v15 Workspace */}
+      <div className="repwise-stream-shell h-[720px] overflow-hidden rounded-3xl border border-border bg-surface shadow-2xl">
+        {paginatorReady && (
+          <Chat
+            client={chatClient}
+            theme={theme === 'dark' ? 'str-chat__theme-dark' : 'messaging light'}
+          >
+            <ChatView layouts={CHAT_VIEW_LAYOUTS}>
+              <div className="grid h-full w-full grid-cols-1 md:grid-cols-[320px_1fr]">
+                <div className="h-full overflow-y-auto border-r border-border">
+                  <ChannelNavigation />
+                </div>
+                <div className="flex h-full min-w-0 flex-1 overflow-hidden">
+                  <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
+                    <ChannelSlot
+                      slot="channel"
+                      fallback={<ChatViewEmptyPlaceholder />}
+                    >
+                      <ChannelHeader />
+                      <MessageList closeReactionSelectorOnClick />
+                      <MessageComposer />
+                    </ChannelSlot>
+                  </div>
+                  <ThreadSlot slot="thread">
+                    <div className="flex h-full w-[340px] shrink-0 flex-col border-l border-border">
+                      <ActiveThreadBinder />
+                      <ThreadHeader />
+                      <MessageList closeReactionSelectorOnClick />
+                      <MessageComposer />
+                    </div>
+                  </ThreadSlot>
+                </div>
+              </div>
+              <WorkspacePartnerOpener
+                requestedPartner={requestedPartner}
+                onOpened={handleClearPartnerRequest}
+              />
+              <DisposedChannelRelease />
+            </ChatView>
+          </Chat>
+        )}
       </div>
     </div>
   );
 }
-

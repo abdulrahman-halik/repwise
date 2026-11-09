@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import { Barlow_Condensed, Caveat, Inter } from 'next/font/google';
+import 'stream-chat-react/dist/css/index.css';
+import '@stream-io/video-react-sdk/dist/css/styles.css';
 import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { StreamProvider } from '@/context/StreamContext';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { themeInitScript } from '@/lib/theme-script';
@@ -29,10 +32,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body className="min-h-screen">
         <ThemeProvider>
-          <TooltipProvider>
-            {children}
-            <Toaster position="bottom-right" />
-          </TooltipProvider>
+          <StreamProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster position="bottom-right" />
+            </TooltipProvider>
+          </StreamProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -33,3 +33,7 @@ next-env.d.ts
 .agents
 
 .neon
+.stream/
+
+.claude/
+

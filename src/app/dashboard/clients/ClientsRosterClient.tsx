@@ -106,7 +106,7 @@ export function ClientsRosterClient({
                   </td>
                   <td className="px-6 py-4 text-right">
                     <Button asChild variant="outline" size="sm">
-                      <Link href="/messages">
+                      <Link href={`/messages?partner=${client.userId}`}>
                         <MessageSquare className="size-3.5" /> Message
                       </Link>
                     </Button>

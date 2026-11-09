@@ -254,7 +254,7 @@ export function LibraryClient({
                         </Link>
                       </Button>
                       <Button asChild variant="outline" size="lg">
-                        <Link href="/messages">Message Coach</Link>
+                        <Link href={`/messages?partner=${trainer.userId}`}>Message Coach</Link>
                       </Button>
                     </div>
                   </div>
