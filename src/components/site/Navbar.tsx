@@ -24,8 +24,10 @@ export function Navbar() {
   const { data: session } = authClient.useSession();
   const [role, setRole] = useState<'client' | 'trainer' | null>(null);
 
+  const userId = session?.user?.id;
+
   useEffect(() => {
-    if (!session?.user) {
+    if (!userId) {
       setRole(null);
       return;
     }
@@ -35,7 +37,7 @@ export function Navbar() {
         if (data?.role) setRole(data.role);
       })
       .catch(() => {});
-  }, [session?.user]);
+  }, [userId]);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 

@@ -9,25 +9,44 @@ export async function GET() {
   try {
     const { data: session } = await auth.getSession();
     if (!session?.user) {
-      return NextResponse.json({ profile: null, role: null }, { status: 200 });
+      return NextResponse.json(
+        { profile: null, role: null },
+        {
+          status: 200,
+          headers: {
+            'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+          },
+        }
+      );
     }
 
-    // Try finding profile by userId or email
+    const userId = session.user.id;
+    const email = session.user.email;
+
+    // Fast path: primary key lookup by userId, fallback to email if different
+    const condition =
+      userId && email && userId !== email
+        ? or(eq(profiles.userId, userId), eq(profiles.userId, email))
+        : eq(profiles.userId, userId || email || '');
+
     const [existing] = await db
       .select()
       .from(profiles)
-      .where(
-        or(
-          eq(profiles.userId, session.user.id),
-          eq(profiles.userId, session.user.email)
-        )
-      )
+      .where(condition)
       .limit(1);
 
-    return NextResponse.json({
-      profile: existing || null,
-      role: existing?.role || 'client',
-    });
+    return NextResponse.json(
+      {
+        profile: existing || null,
+        role: existing?.role || 'client',
+      },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'private, max-age=30, stale-while-revalidate=120',
+        },
+      }
+    );
   } catch (error: unknown) {
     console.error('Error fetching profile:', error);
     return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
